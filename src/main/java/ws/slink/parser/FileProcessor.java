@@ -1,0 +1,378 @@
+package ws.slink.parser;
+
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+import org.asciidoctor.Asciidoctor;
+import org.asciidoctor.OptionsBuilder;
+import org.asciidoctor.SafeMode;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.zendesk.client.v2.model.hc.Article;
+import ws.slink.config.AppConfig;
+import ws.slink.model.Document;
+import ws.slink.model.ProcessingResult;
+import ws.slink.processor.CodeBlockPostProcessor;
+import ws.slink.zendesk.ZendeskFacade;
+import ws.slink.zendesk.ZendeskHierarchy;
+import ws.slink.zendesk.ZendeskTools;
+
+import javax.annotation.PostConstruct;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import static ws.slink.model.ProcessingResult.ResultType.*;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+public class FileProcessor {
+
+    @Value("${asciidoc.template.title}")
+    private String titleTemplate;
+
+    @Value("${asciidoc.template.title-old}")
+    private String titleOldTemplate;
+
+    @Value("${asciidoc.template.position}")
+    private String positionTemplate;
+
+    @Value("${asciidoc.template.hidden}")
+    private String hiddenTemplate;
+
+    @Value("${asciidoc.template.draft}")
+    private String draftTemplate;
+
+    @Value("${asciidoc.template.promoted}")
+    private String promotedTemplate;
+
+    @Value("${asciidoc.template.tags}")
+    private String tagsTemplate;
+
+    @Value("${zendesk.publish}")
+    private boolean performPublication;
+
+    private final @NonNull AppConfig appConfig;
+    private final @NonNull ZendeskTools zendeskTools;
+    private final @NonNull ZendeskFacade zendeskFacade;
+
+    @SuppressWarnings("unchecked")
+    private void disableAccessWarnings() {
+        try {
+            Class unsafeClass = Class.forName("sun.misc.Unsafe");
+            Field field = unsafeClass.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            Object unsafe = field.get(null);
+
+            Method putObjectVolatile = unsafeClass.getDeclaredMethod("putObjectVolatile", Object.class, long.class, Object.class);
+            Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
+
+            Class loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
+            Field loggerField = loggerClass.getDeclaredField("logger");
+            Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
+            putObjectVolatile.invoke(unsafe, loggerClass, offset, null);
+        } catch (Exception ignored) {
+        }
+    }
+
+    @PostConstruct
+    private void init() {
+        disableAccessWarnings();
+    }
+
+    /**
+     * we need to initialize AsciiDoctor for each document being processed, as we need to know document's space
+     * to create correct inter-document links
+     *
+     * @param document
+     */
+    private Asciidoctor initializeAsciidoctor(Document document) {
+
+        Asciidoctor asciidoctor = Asciidoctor.Factory.create();
+
+        // register preprocessors
+//        asciidoctor.javaExtensionRegistry().preprocessor(CodeBlockPreProcessor.class);
+//        asciidoctor.javaExtensionRegistry().preprocessor(ConfluenceLinkMacroPreProcessor.class);
+//        asciidoctor.javaExtensionRegistry().preprocessor(TreeMacroPreProcessor.class);
+
+        // register block processors
+//        asciidoctor.javaExtensionRegistry().block(CodeBlockProcessor.class);
+
+        // register (inline) macro processors
+//        asciidoctor.javaExtensionRegistry().inlineMacro(new ConfluenceLinkInlineMacroProcessor(document.space()));
+//        asciidoctor.javaExtensionRegistry().blockMacro(TreeMacroProcessor.class);
+
+        // register postprocessors
+        asciidoctor.javaExtensionRegistry().postprocessor(CodeBlockPostProcessor.class);
+//        asciidoctor.javaExtensionRegistry().postprocessor(NoticeBlockPostProcessor.class);
+//        asciidoctor.javaExtensionRegistry().postprocessor(TOCBlockPostProcessor.class);
+
+        return asciidoctor;
+    }
+
+    public ProcessingResult process(String inputFilename, ZendeskHierarchy hierarchy) {
+        ProcessingResult result = new ProcessingResult();
+        if (StringUtils.isNotBlank(inputFilename))
+            read(inputFilename, hierarchy).ifPresent(d -> convert(d).ifPresent(cd -> result.merge(publishOrPrint(d, cd, hierarchy))));
+        return result;
+    }
+
+    public Optional<Document> read(String inputFilename, ZendeskHierarchy hierarchy) {
+        List<String> lines;
+        try {
+            lines = FileUtils.readLines(new File(inputFilename), "utf-8");
+        } catch (IOException e) {
+            log.error("error reading file: {}", e.getMessage());
+            return Optional.empty();
+        }
+
+        try {
+            Document document =
+                new Document()
+                    .inputFilename(inputFilename)
+                    .category(hierarchy.category().getName())
+                    .section(hierarchy.section().getName())
+                    .title(getDocumentParam(lines, titleTemplate, null))
+                    .oldTitle(getDocumentParam(lines, titleOldTemplate, null))
+                    .position(getDocumentIntParam(lines, positionTemplate, Integer.MAX_VALUE))
+                    .hidden(getDocumentBooleanParam(lines, hiddenTemplate))
+                    .draft(getDocumentBooleanParam(lines, draftTemplate))
+                    .promoted(getDocumentBooleanParam(lines, promotedTemplate))
+                    .contents(lines.stream().collect(Collectors.joining("\n")))
+                    .tags(
+                        Arrays.asList(getDocumentParam(lines, tagsTemplate, null).split(","))
+                            .stream()
+                            .filter(s -> StringUtils.isNotBlank(s))
+                            .map(s -> s.trim())
+                            .collect(Collectors.toList())
+                    );
+
+            if (!FilenameUtils.getBaseName(inputFilename)
+                    .replaceAll(" ", "_")
+                    .equalsIgnoreCase(document.title().replaceAll(" ", "_")))
+                log.warn("document title does not match with file name: '{}' - '{}'",
+                    document.title(),
+                    FilenameUtils.getName(inputFilename));
+
+            return Optional.of(document);
+
+        } catch (Exception e) {
+            log.warn("error reading document: {}", e.getMessage());
+            if (log.isTraceEnabled())
+                e.printStackTrace();
+            return Optional.empty();
+        }
+    }
+
+    public Optional<String> convert(Document document) {
+        Asciidoctor asciidoctor = initializeAsciidoctor(document);
+        try {
+            String result = asciidoctor
+            .convertFile(
+                new File(document.inputFilename()),
+                OptionsBuilder.options()
+                    .backend("xhtml5")
+                    .toFile(false)
+                    .safe(SafeMode.UNSAFE)
+            );
+            return Optional.ofNullable(result);
+        } catch (Exception e) {
+            log.warn("error converting file: {}", e.getMessage());
+            return Optional.empty();
+        } finally {
+            asciidoctor.shutdown();
+        }
+    }
+
+    public ProcessingResult publishOrPrint(Document document, String convertedDocument, ZendeskHierarchy hierarchy) {
+
+        if (performPublication) { // publish document
+            if (document.hidden()) {
+                log.info("skipping hidden article '{}'", document.title());
+                return new ProcessingResult(RT_SKIPPED);
+            } else {
+                // for renaming support we need to query existing articles either with document's 'title' or 'oldTitle'
+                String requestTitle = StringUtils.isBlank(document.oldTitle()) ? document.title() : document.oldTitle();
+
+                Optional<Article> requestedArticle = zendeskFacade.getArticle(hierarchy.section(), requestTitle);
+
+                // if we're trying to rename already renamed document (forgot to clean OLD-TITLE tag)
+                if (!requestedArticle.isPresent()) {
+                    requestedArticle = zendeskFacade.getArticle(hierarchy.section(), document.title());
+                }
+
+                Optional<Article> newArticle;
+                if (requestedArticle.isPresent()) {
+                    log.trace("updating existing article '{}'", requestedArticle.get().getTitle());
+                    newArticle = zendeskTools.updateArticle(requestedArticle.get(), document, convertedDocument);
+                } else {
+                    log.trace("creating new article '{}'", requestTitle);
+                    newArticle = zendeskTools.createArticle(document, hierarchy.section(), convertedDocument);
+                }
+
+                if (!newArticle.isPresent()) {
+                    log.warn("could not create or update article '{}'", requestTitle);
+                    return new ProcessingResult(RT_PUB_FAILURE);
+                } else {
+                    Optional<Article> processedArticle;
+                    if (requestedArticle.isPresent()) {
+                        log.trace("updating existing article in zendesk '{}'", newArticle.get().getTitle());
+                        processedArticle = zendeskFacade.updateArticle(newArticle.get());
+                    } else {
+                        log.trace("creating new article in zendesk '{}'", newArticle.get().getTitle());
+                        processedArticle = zendeskFacade.addArticle(newArticle.get());
+                    }
+                    if (!processedArticle.isPresent()) {
+                        log.warn("could not create or update article '{}' on zendesk server", newArticle.get().getTitle());
+                        return new ProcessingResult(RT_PUB_FAILURE);
+                    }
+                }
+                return new ProcessingResult(RT_PUB_SUCCESS);
+            }
+        } else { // just print document to stdout
+            System.out.println("-------------------------------------------------------------------------------------");
+            document.print("    ");
+//            System.out.println(convertedDocument);
+
+            Optional<Article> requestedArticle = zendeskFacade.getArticle(hierarchy.section(), document.title());
+            System.out.println(requestedArticle);
+            System.out.println("\nTranslations: ");
+            requestedArticle.ifPresent(article ->
+                StreamSupport.stream(zendeskFacade.getTranslations(article).spliterator(), false)
+                    .forEach(System.out::println));
+
+            return new ProcessingResult(RT_SKIPPED);
+        }
+    }
+
+    private String getDocumentParam(List<String> lines, String key, String override) {
+        return (StringUtils.isNotBlank(override))
+            ? override
+            : lines
+            .stream()
+            .filter(s -> s.contains(key))
+            .findFirst()
+            .orElse("")
+            .replace(key, "")
+            .replace("/", "")
+            .trim()
+        ;
+    }
+    private boolean getDocumentBooleanParam(List<String> lines, String key) {
+        Optional<String> argument =
+            lines.stream()
+                .filter(s -> s.startsWith("//") && s.contains(key))
+                .findFirst();
+        if (!argument.isPresent()) {
+            return false;
+        } else {
+            String value = argument.get()
+                .replaceAll("/", "")
+                .replace(key, "")
+                .trim();
+            log.trace("boolean value for {} is '{}'", key, value);
+            return (StringUtils.isBlank(value)) ? true : Boolean.parseBoolean(value);
+        }
+    }
+    private int getDocumentIntParam(List<String> lines, String key, int defaultValue) {
+        Optional<String> argument =
+                lines.stream()
+                        .filter(s -> s.startsWith("//") && s.contains(key))
+                        .findFirst();
+        if (!argument.isPresent()) {
+            return defaultValue;
+        } else {
+            String value = argument.get()
+                    .replaceAll("/", "")
+                    .replace(key, "")
+                    .trim();
+            log.trace("integer value for {} is '{}'", key, value);
+            try {
+                return Integer.valueOf(value);
+            } catch (Exception e) {
+                return defaultValue;
+            }
+        }
+    }
+}
+
+
+
+
+
+
+//        zendeskTools.createArticle(document, hierarchy.section(), convertedDocument)
+//            .ifPresent(a -> {
+//
+//            });
+
+//        System.out.println("-----------------------------------------------------------------------------------------");
+//        document.print("    ");
+//        if (StringUtils.isNotBlank(appConfig.getUrl())) {
+//            if (!confluence.canPublish()) {
+//                log.warn("can't publish document '" + document.inputFilename() + "' to confluence: not all confluence parameters are set (url, login, password)");
+//                return ProcessingResult.FAILURE;
+//            } else {
+//                if (!document.canPublish()) {
+//                    log.warn("can't publish document '" + document.inputFilename() + "' to confluence: not all document parameters are set (title, spaceKey)");
+//                    return ProcessingResult.FAILURE;
+//                } else {
+//                    // delete page
+//                    confluence.getPageId(document.space(), document.title()).ifPresent(id -> confluence.deletePage(id, document.title()));
+//                    // delete old page in case of renaming
+//                    if (StringUtils.isNotBlank(document.oldTitle()))
+//                        confluence.getPageId(document.space(), document.oldTitle()).ifPresent(id -> confluence.deletePage(id, document.oldTitle()));
+//                    // check if document needs to be published
+//                    if (!document.hidden()) {
+//                        // publish to confluence
+//                        if (confluence.publishPage(document.space(), document.title(), document.parent(), convertedDocument)) {
+//                            log.info(
+//                                String.format(
+//                                    "Published document to confluence: %s/display/%s/%s"
+//                                    , appConfig.getUrl()
+//                                    , document.space()
+//                                    , document.title().replaceAll(" ", "+")
+//                                )
+//                            );
+//                            if (confluence.tagPage(document.space(), document.title(), document.tags())) {
+//                                log.info(
+//                                    String.format(
+//                                        "Labeled document with tags: %s"
+//                                        , document.tags()
+//                                    )
+//                                );
+//                            }requestTitle
+//                            return ProcessingResult.SUCCESS;
+//                        } else {
+//                            log.warn(
+//                                String.format(
+//                                    "Could not publish document '%s' to confluence server"
+//                                    , document.title()
+//                                )
+//                            );
+//                            if (appConfig.isDebug())
+//                                System.out.println(convertedDocument);
+//                            return ProcessingResult.FAILURE;
+//                        }
+//                    } else {
+//                        log.warn("document '{}' is hidden, skip publishing", document.title());
+//                        return ProcessingResult.HIDDEN;
+//                    }
+//                }
+//            }
+//        } else {
+//            // or print to stdout
+//            System.out.println(convertedDocument);
+//            return ProcessingResult.SUCCESS;
+//        }

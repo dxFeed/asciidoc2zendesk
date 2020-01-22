@@ -1,0 +1,30 @@
+package org.zendesk.client.v2.model.events;
+
+import org.zendesk.client.v2.model.events.Event;
+
+/**
+ * @author stephenc
+ * @since 05/04/2013 11:56
+ */
+public class ErrorEvent extends Event {
+
+    private static final long serialVersionUID = 1L;
+
+    // for Errors
+    private String message;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    @Override
+    public String toString() {
+        return "ErrorEvent" +
+                "{message='" + message + '\'' +
+                '}';
+    }
+}

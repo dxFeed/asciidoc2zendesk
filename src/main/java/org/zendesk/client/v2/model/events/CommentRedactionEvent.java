@@ -1,0 +1,34 @@
+package org.zendesk.client.v2.model.events;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.zendesk.client.v2.model.events.Event;
+
+/**
+ * A word or string was redacted from a ticket comment
+ * 
+ * @author matthewtckr
+ * @see <a href="https://developer.zendesk.com/rest_api/docs/core/ticket_audits#comment-redaction-event">Zendesk API Documentation</a>
+ *
+ */
+public class CommentRedactionEvent extends Event {
+
+  private static final long serialVersionUID = 1L;
+
+  private Long commentId;
+
+  @JsonProperty("comment_id")
+  public Long getCommentId() {
+    return commentId;
+  }
+
+  public void setCommentId( Long commentId ) {
+    this.commentId = commentId;
+  }
+
+  @Override
+  public String toString() {
+      return "CommentRedactionEvent" +
+              "{commentId=" + commentId +
+              '}';
+  }
+}

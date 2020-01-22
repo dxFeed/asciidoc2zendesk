@@ -1,0 +1,44 @@
+zendesk:
+  permission-group-title: "Agents and managers"
+#  locale                : "en-us"
+  comments-disabled     : false
+#  notify-subscribers    : true
+  max-attempts          : 5
+  forced-update         : false
+  publish               : true
+
+properties:
+  template:
+    category:
+      title       : CATEGORY_TITLE
+      description : CATEGORY_DESCRIPTION
+      position    : CATEGORY_POSITION
+
+    section:
+      title       : SECTION_TITLE
+      description : SECTION_DESCRIPTION
+      position    : SECTION_POSITION
+
+asciidoc:
+  template:
+    title     : ":ZENDESK-TITLE:"
+    title-old : ":ZENDESK-OLD-TITLE:"
+    position  : ":ZENDESK-ORDER:"
+    hidden    : ":ZENDESK-HIDDEN:"
+    tags      : ":ZENDESK-TAGS:"
+    draft     : ":ZENDESK-DRAFT:"
+    promoted  : ":ZENDESK-PROMOTED:"
+
+server:
+  port: 8088
+
+spring:
+  main:
+    banner-mode: "off"
+  profiles:
+    active: main
+
+logging:
+  level:
+    root: WARN
+    ws.slink: TRACE
