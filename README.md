@@ -63,9 +63,9 @@ The data for program should be be provisioned like this:
 - directory (`--dir=<directory>`)
     
     Directory will be processed recursively. All the *.adoc and *.asciidoc files will be converted (and published to 
-    zendesk server). Subdirectories are being processed in such a way 
-    that at first all files from a directory are being processed, then (if needed) all the 'stale' articela for given 
-    section are being removed and then all the subdirectories are being processed. 
+    zendesk server). Subdirectories are being processed in such a way that at first all files from a directory are being 
+    processed, then (if needed) all the 'stale' articles for given section are being removed and then all the 
+    subdirectories are being processed. 
     
 ## Tagging documents
 If `ZENDESK-TAGS` header is set for document, related page on confluence will be labeled with configured tags. Tags 
