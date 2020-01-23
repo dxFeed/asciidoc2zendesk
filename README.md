@@ -73,7 +73,7 @@ should be separated with commas.
 
 
 ## Table Of Contents
-To insert TOC macro in resulting confluence page use following syntax:
+To insert TOC macro in resulting document use following syntax:
 
 ```
 // ...
