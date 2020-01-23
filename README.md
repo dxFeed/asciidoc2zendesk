@@ -68,10 +68,8 @@ The data for program should be be provisioned like this:
     subdirectories are being processed. 
     
 ## Tagging documents
-If `ZENDESK-TAGS` header is set for document, related page on confluence will be labeled with configured tags. Tags 
-should be separated with commas. Spaces in multi-word tags will be converted to underscores ('_'), as confluence does 
-not support multi-word labels 
-(see [here](https://confluence.atlassian.com/jirakb/creating-multiple-word-labels-779160786.html)).
+If `ZENDESK-TAGS` header is set, then article will be marked with these labels on zendesk server. Tags 
+should be separated with commas.
 
 
 ## Table Of Contents
