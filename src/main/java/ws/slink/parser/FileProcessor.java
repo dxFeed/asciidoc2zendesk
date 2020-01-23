@@ -200,7 +200,7 @@ public class FileProcessor {
         if (performPublication) { // publish document
             if (document.hidden()) {
                 log.info("skipping hidden article '{}'", document.title());
-                return new ProcessingResult(RT_SKIPPED);
+                return new ProcessingResult(RT_FILE_SKIPPED);
             } else {
                 // for renaming support we need to query existing articles either with document's 'title' or 'oldTitle'
                 String requestTitle = StringUtils.isBlank(document.oldTitle()) ? document.title() : document.oldTitle();
@@ -243,16 +243,16 @@ public class FileProcessor {
         } else { // just print document to stdout
             System.out.println("-------------------------------------------------------------------------------------");
             document.print("    ");
-//            System.out.println(convertedDocument);
+            System.out.println(convertedDocument);
 
-            Optional<Article> requestedArticle = zendeskFacade.getArticle(hierarchy.section(), document.title());
-            System.out.println(requestedArticle);
-            System.out.println("\nTranslations: ");
-            requestedArticle.ifPresent(article ->
-                StreamSupport.stream(zendeskFacade.getTranslations(article).spliterator(), false)
-                    .forEach(System.out::println));
+//            Optional<Article> requestedArticle = zendeskFacade.getArticle(hierarchy.section(), document.title());
+//            System.out.println(requestedArticle);
+//            System.out.println("\nTranslations: ");
+//            requestedArticle.ifPresent(article ->
+//                StreamSupport.stream(zendeskFacade.getTranslations(article).spliterator(), false)
+//                    .forEach(System.out::println));
 
-            return new ProcessingResult(RT_SKIPPED);
+            return new ProcessingResult(RT_FILE_PRINTED);
         }
     }
 

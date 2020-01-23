@@ -16,11 +16,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ProcessingResult {
 
     public enum ResultType {
-        RT_PUB_SUCCESS, // publication success
-        RT_PUB_FAILURE, // publication failure
-        RT_DEL_SUCCESS, // removal success
-        RT_DEL_FAILURE, // removal failure
-        RT_SKIPPED      // document skipped due to being "hidden"
+        RT_PUB_SUCCESS,  // publication success
+        RT_PUB_FAILURE,  // publication failure
+        RT_DEL_SUCCESS,  // removal success
+        RT_DEL_FAILURE,  // removal failure
+        RT_FILE_SKIPPED, // document skipped due to being "hidden"
+        RT_DIR_SKIPPED,  // if no .properies file found or no needed data exists in .properties file
+        RT_FILE_PRINTED  // file printed instead of being published
     }
 
     private Map<ResultType, AtomicInteger> results = new ConcurrentHashMap<>();
@@ -32,7 +34,7 @@ public class ProcessingResult {
         this.add(type);
     }
 
-    private ProcessingResult add(ResultType key) {
+    public ProcessingResult add(ResultType key) {
         if (!results.containsKey(key))
             results.put(key, new AtomicInteger(0));
         results.get(key).addAndGet(1);

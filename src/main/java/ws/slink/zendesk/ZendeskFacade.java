@@ -14,8 +14,10 @@ import ws.slink.config.AppConfig;
 
 import javax.annotation.PostConstruct;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
@@ -321,6 +323,30 @@ public class ZendeskFacade {
     }
 
 
+    public List<Article> getArticles(Section section) {
+        for (int i = 0; i < maxRequestAttempts; i++) {
+            try {
+                return StreamSupport
+                        .stream(zendesk.getArticles(section).spliterator(), false)
+                        .collect(Collectors.toList());
+            } catch (ZendeskResponseRateLimitException rateLimit) {
+                apiRateLimitWait(rateLimit.getRetryAfter());
+            } catch (ZendeskResponseException e) {
+                log.warn("zendesk exception occurred requesting article list: {} {} {}", e.getStatusCode(), e.getStatusText(), e.getMessage());
+//                if (log.isTraceEnabled())
+//                    log.warn("{}", e.getBody());
+            } catch (Exception e) {
+                log.warn("error requesting article list from zendesk: {}", e.getMessage());
+                if (log.isTraceEnabled())
+                    e.printStackTrace();
+            }
+        }
+        log.info("Maximum request attempts reached, no data received from Zendesk");
+        return Collections.EMPTY_LIST;
+    }
+
+
+
     public Optional<Article> getArticle(Section section, String articleTitle) {
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
@@ -394,6 +420,24 @@ public class ZendeskFacade {
         }
         log.info("maximum API request attempts reached");
         return Optional.empty();
+    }
+    public boolean removeArticle(Article article) {
+        for (int i = 0; i < maxRequestAttempts; i++) {
+            try {
+                zendesk.deleteArticle(article);
+                return true;
+            } catch (ZendeskResponseRateLimitException rateLimit) {
+                apiRateLimitWait(rateLimit.getRetryAfter());
+            } catch (ZendeskResponseException e) {
+                log.warn("zendesk exception occurred requesting article list: {} {} {}", e.getStatusCode(), e.getStatusText(), e.getMessage());
+            } catch (Exception e) {
+                log.warn("error requesting article list from zendesk: {}", e.getMessage());
+                if (log.isTraceEnabled())
+                    e.printStackTrace();
+            }
+        }
+        log.info("Maximum request attempts reached, no data received from Zendesk");
+        return false;
     }
 
     public Iterable<Translation> getTranslations(Article article) {

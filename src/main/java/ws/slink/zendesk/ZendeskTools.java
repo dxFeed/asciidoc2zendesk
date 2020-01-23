@@ -69,6 +69,11 @@ public class ZendeskTools {
             return false;
         }
 
+        // reset section on directory change
+        if (StringUtils.isBlank(secName)) {
+            hierarchy.section = null;
+        }
+
         // load category if needed
         if (!StringUtils.isBlank(catName) && (null == hierarchy.category() || !hierarchy.category().getName().equalsIgnoreCase(catName))) {
             Optional<Category> categoryOpt = zendeskFacade.getCategory(catName, catDesc, catPos, shouldUpdate);
