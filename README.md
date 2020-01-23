@@ -89,7 +89,7 @@ To insert TOC macro in resulting document use following syntax:
 
 ## Disable document publishing
 For testing purposes or during documentation preparation you may need to prevent existing document
-from publishing to confluence server. For this you can use `ZENDESK-HIDDEN` header like this:
+from being published to zendesk server. For this you can use `ZENDESK-HIDDEN` header like this:
 ```
 // prevents document from publication
 // :ZENDESK-HIDDEN:    
