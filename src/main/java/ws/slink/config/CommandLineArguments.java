@@ -20,6 +20,9 @@ public class CommandLineArguments {
         if (args.containsOption("clean")) {
             appConfig.clean(true);
         }
+        if (args.containsOption("delete-all")) {
+            appConfig.deleteAll(true);
+        }
         if (args.containsOption("url")) {
             appConfig.url(args.getOptionValues("url").get(0));
         }

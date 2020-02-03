@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ws.slink.config.AppConfig;
 import ws.slink.model.ProcessingResult;
+import ws.slink.zendesk.ZendeskFacade;
 import ws.slink.zendesk.ZendeskHierarchy;
+import ws.slink.zendesk.ZendeskTools;
 
 import java.time.Instant;
 
@@ -22,12 +24,26 @@ public class Processor {
 
     private final @NonNull AppConfig appConfig;
     private final @NonNull DirectoryProcessor directoryProcessor;
+    private final @NonNull ZendeskTools zendeskTools;
+    private final @NonNull ZendeskFacade zendeskFacade;
 
     public String process() {
         long timeA = Instant.now().toEpochMilli();
         ProcessingResult result = new ProcessingResult();
-        if (StringUtils.isNotBlank(appConfig.dir()))
-            result.merge(directoryProcessor.process(appConfig.dir(), new ZendeskHierarchy()));
+        if (appConfig.deleteAll()) {
+            zendeskFacade.getArticles().stream().forEach(a -> {
+                if (zendeskFacade.removeArticle(a)) {
+                    result.add(RT_DEL_SUCCESS);
+                    log.info("removed article '{}' from ZenDesk server", a.getTitle());
+                } else {
+                    result.add(RT_DEL_FAILURE);
+                    log.warn("could not remove article '{}' from ZenDesk server", a.getTitle());
+                }
+            });
+        } else {
+            if (StringUtils.isNotBlank(appConfig.dir()))
+                result.merge(directoryProcessor.process(appConfig.dir(), new ZendeskHierarchy()));
+        }
         long timeB = Instant.now().toEpochMilli();
         return new StringBuilder()
             .append("-------------------------------------------------------------").append("\n")
@@ -41,5 +57,4 @@ public class Processor {
             .append("printed documents      : " + result.get(RT_FILE_PRINTED).get()).append("\n")
             .toString();
     }
-
 }

@@ -53,7 +53,7 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
         return !( StringUtils.isNotBlank(appConfig.url()) && (StringUtils.isBlank(appConfig.user()) || StringUtils.isBlank(appConfig.token()))
         || StringUtils.isNotBlank(appConfig.user()) && (StringUtils.isBlank(appConfig.url()) || StringUtils.isBlank(appConfig.token()))
         || StringUtils.isNotBlank(appConfig.token()) && (StringUtils.isBlank(appConfig.user()) || StringUtils.isBlank(appConfig.url()))
-        || (StringUtils.isBlank(appConfig.dir()))
+        || (StringUtils.isBlank(appConfig.dir()) && !appConfig.deleteAll())
         )
         ;
     }
@@ -61,11 +61,13 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
     public void printUsage() {
         System.out.println("Usage: ");
         System.out.println("  java -jar asciidoc2zendesk.jar --dir=<path/to/directory> --url=<zendesk url> --user=<login> --token=<token> [--profile=<propfile name>]");
-        System.out.println("\t--dir\t\tDirectory to process asciidoc files recursively");
-        System.out.println("\t--url\t\tZendesk server URL (e.g. http://test.zendesk.com)");
-        System.out.println("\t--user\t\tZendesk user with publish rights");
-        System.out.println("\t--token\t\tZendesk access token");
+        System.out.println("\t--dir\t\t\tDirectory to process asciidoc files recursively");
+        System.out.println("\t--url\t\t\tZendesk server URL (e.g. http://test.zendesk.com)");
+        System.out.println("\t--user\t\t\tZendesk user with publish rights");
+        System.out.println("\t--token\t\t\tZendesk access token");
         System.out.println("\t--profile\t\tNon-standard profile to use during documents upload (profile configuration will be read from .properties.<profile> file in each directory)");
+        System.out.println("\t--clean\t\t\tRemove articles from ZenDesk server, which are not exist in local repository");
+        System.out.println("\t--delete-all\tRemove all articles from ZenDesk server");
         System.exit(1);
     }
 

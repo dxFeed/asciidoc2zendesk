@@ -36,11 +36,14 @@ public class ZendeskFacade {
     private void init() {
         System.out.println("--- Application Configuration ----------------------------------");
         appConfig.print();
-
-        zendesk = new Zendesk.Builder(appConfig.url())
-            .setUsername(appConfig.user())
-            .setToken(appConfig.token())
-            .build();
+        try {
+            zendesk = new Zendesk.Builder(appConfig.url())
+                    .setUsername(appConfig.user())
+                    .setToken(appConfig.token())
+                    .build();
+        } catch (Exception e) {
+            log.warn("Could not initialize ZenDesk client");
+        }
     }
 
 
@@ -344,7 +347,27 @@ public class ZendeskFacade {
         log.info("Maximum request attempts reached, no data received from Zendesk");
         return Collections.EMPTY_LIST;
     }
-
+    public List<Article> getArticles() {
+        for (int i = 0; i < maxRequestAttempts; i++) {
+            try {
+                return StreamSupport
+                        .stream(zendesk.getArticles().spliterator(), false)
+                        .collect(Collectors.toList());
+            } catch (ZendeskResponseRateLimitException rateLimit) {
+                apiRateLimitWait(rateLimit.getRetryAfter());
+            } catch (ZendeskResponseException e) {
+                log.warn("zendesk exception occurred requesting article list: {} {} {}", e.getStatusCode(), e.getStatusText(), e.getMessage());
+//                if (log.isTraceEnabled())
+//                    log.warn("{}", e.getBody());
+            } catch (Exception e) {
+                log.warn("error requesting article list from zendesk: {}", e.getMessage());
+                if (log.isTraceEnabled())
+                    e.printStackTrace();
+            }
+        }
+        log.info("Maximum request attempts reached, no data received from Zendesk");
+        return Collections.EMPTY_LIST;
+    }
 
 
     public Optional<Article> getArticle(Section section, String articleTitle) {

@@ -31,6 +31,7 @@ public class AppConfig {
     private String token;
     private String profile; // configuration file suffix (.properties.profile)
     private boolean clean;
+    private boolean deleteAll;
 
     public void print() {
         System.out.println("input directory: " + dir);
@@ -38,6 +39,7 @@ public class AppConfig {
         System.out.println("zendesk user   : " + user);
         System.out.println("zendesk token  : " + token);
         System.out.println("clean flag     : " + clean);
+        System.out.println("delete all flag: " + deleteAll);
         System.out.println("config profile : " + profile);
         System.out.println("config file    : " + getConfigFileName());
     }
