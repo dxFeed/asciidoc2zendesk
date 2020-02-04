@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ProcessingResult {
 
     public enum ResultType {
+        RT_NONE,
         RT_PUB_SUCCESS,  // publication success
         RT_PUB_FAILURE,  // publication failure
         RT_DEL_SUCCESS,  // removal success

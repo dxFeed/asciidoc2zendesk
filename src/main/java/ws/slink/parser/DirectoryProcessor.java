@@ -36,15 +36,17 @@ public class DirectoryProcessor {
     private final @NonNull ZendeskFacade zendeskFacade;
 
     public ProcessingResult process(String directoryPath, ZendeskHierarchy hierarchy) {
-        log.trace("processing: {}", directoryPath);
+        log.trace("> start directory processing: '{}'", directoryPath);
         ProcessingResult result = new ProcessingResult();
 
-        if (!zendeskTools.updateHierarchy(hierarchy, readProperties(directoryPath)))
+        if (!zendeskTools.updateHierarchy(hierarchy, readProperties(directoryPath))) {
             log.warn("could not load zendesk hierarchy data");
-
-        result.merge(processAllFiles(directoryPath, hierarchy));
-        if (appConfig.clean())
-            result.merge(removeStaleArticles(directoryPath, hierarchy));
+            result.add(RT_DIR_SKIPPED);
+        } else {
+            result.merge(processAllFiles(directoryPath, hierarchy));
+            if (appConfig.clean())
+                result.merge(removeStaleArticles(directoryPath, hierarchy));
+        }
         result.merge(processAllDirectories(directoryPath, hierarchy));
 
         return result;
@@ -54,7 +56,7 @@ public class DirectoryProcessor {
         try {
 
             if (null == hierarchy.section() || null == hierarchy.category())
-                return new ProcessingResult(RT_DIR_SKIPPED);
+                return new ProcessingResult(RT_NONE);
 
             ProcessingResult result = new ProcessingResult();
 
@@ -66,7 +68,10 @@ public class DirectoryProcessor {
                 .filter(f -> f.getName().endsWith(".adoc") || f.getName().endsWith(".asciidoc"))
                 .map(f -> f.getAbsolutePath())
                 .map(f -> fileProcessor.read(f, hierarchy))
-                .filter(od -> od.isPresent()).map(od -> od.get().title())
+                .filter(od -> od.isPresent())
+                .map(od -> od.get())
+//                .filter(d -> !d.hidden()) // hidden documents also will be removed from zendesk (if previously were published)
+                .map(d -> d.title())
                 .collect(Collectors.toSet())
             ;
 

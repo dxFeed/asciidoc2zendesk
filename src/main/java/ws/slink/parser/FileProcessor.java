@@ -122,6 +122,7 @@ public class FileProcessor {
     }
 
     public ProcessingResult process(String inputFilename, ZendeskHierarchy hierarchy) {
+        log.trace(">> start file processing: '{}'", inputFilename);
         ProcessingResult result = new ProcessingResult();
         if (StringUtils.isNotBlank(inputFilename))
             read(inputFilename, hierarchy).ifPresent(d -> convert(d).ifPresent(cd -> result.merge(publishOrPrint(d, cd, hierarchy))));
