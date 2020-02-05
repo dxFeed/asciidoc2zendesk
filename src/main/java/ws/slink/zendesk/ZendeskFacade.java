@@ -13,7 +13,6 @@ import org.zendesk.client.v2.model.hc.*;
 import ws.slink.config.AppConfig;
 
 import javax.annotation.PostConstruct;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +46,27 @@ public class ZendeskFacade {
     }
 
 
+    public List<Category> getCategories() {
+        for (int i = 0; i < maxRequestAttempts; i++) {
+            try {
+                return StreamSupport
+                        .stream(zendesk.getCategories().spliterator(), true)
+                        .collect(Collectors.toList());
+            } catch (ZendeskResponseRateLimitException rateLimit) {
+                apiRateLimitWait(rateLimit.getRetryAfter());
+            } catch (ZendeskResponseException e) {
+                log.warn("zendesk exception occurred requesting categories: {} {}", e.getStatusCode(), e.getStatusText());
+//                if (log.isTraceEnabled())
+//                    log.warn("{}", e.getBody());
+            } catch (Exception e) {
+                log.warn("error requesting categories from zendesk: {}", e.getMessage());
+                if (log.isTraceEnabled())
+                    e.printStackTrace();
+            }
+        }
+        log.info("maximum request attempts reached, no category data received from zendesk");
+        return Collections.emptyList();
+    }
     /**
      * retrieve category from zendesk by category name
      *
@@ -124,10 +144,16 @@ public class ZendeskFacade {
         }
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
-                category.setName(newName);
-                category.setDescription(newDescription);
                 category.setPosition(newPosition);
-                return Optional.ofNullable(zendesk.updateCategory(category));
+                Category categoryUpdated = zendesk.updateCategory(category);
+                StreamSupport.stream(getTranslations(categoryUpdated).spliterator(), false)
+                        .findFirst()
+                        .ifPresent(t -> {
+                            t.setTitle(newName);
+                            t.setBody(newDescription);
+                            zendesk.updateCategoryTranslation(categoryUpdated.getId(), t.getLocale(), t);
+                        });
+                return Optional.ofNullable(categoryUpdated);
             } catch (ZendeskResponseRateLimitException rateLimit) {
                 apiRateLimitWait(rateLimit.getRetryAfter());
             } catch (ZendeskResponseException e) {
@@ -152,20 +178,40 @@ public class ZendeskFacade {
      * @param update if existing category should be forcefully updated on a server with given parameters
      * @return Optional<Category> or empty if error occurred
      */
-    public Optional<Category> getCategory(String name, String description, long position, boolean update) {
+    public Optional<Category> getCategory(String name, String newName, String description, long position, boolean update) {
         Optional<Category> categoryOpt = getCategory(name);
         if (categoryOpt.isPresent()) {
             if (update) {
-                log.trace("updating category '{}': {} #{}", categoryOpt.get().getId(), name, position);
-                return updateCategory(categoryOpt.get(), name, description, position);
+                log.trace("updating category '{}': {} #{}", categoryOpt.get().getId(), newName, position);
+                return updateCategory(categoryOpt.get(), newName, description, position);
             } else {
                 log.trace("category found: {} #{}", categoryOpt.get().getId(), position);
                 return categoryOpt;
             }
         } else {
-            log.trace("adding category '{}' #{}", name, position);
-            return addCategory(name, description, position);
+            log.trace("adding category '{}' #{}", newName, position);
+            return addCategory(newName, description, position);
         }
+    }
+    public boolean removeCategory(Category category) {
+        for (int i = 0; i < maxRequestAttempts; i++) {
+            try {
+                zendesk.deleteCategory(category);
+                return true;
+            } catch (ZendeskResponseRateLimitException rateLimit) {
+                apiRateLimitWait(rateLimit.getRetryAfter());
+            } catch (ZendeskResponseException e) {
+                log.warn("zendesk exception occurred removing category '{}': {} {}", category.getName(), e.getStatusCode(), e.getStatusText());
+//                if (log.isTraceEnabled())
+//                    log.warn("{}", e.getBody());
+            } catch (Exception e) {
+                log.warn("error removing category '{}' from zendesk: {}", category.getName(), e.getMessage());
+                if (log.isTraceEnabled())
+                    e.printStackTrace();
+            }
+        }
+        log.info("maximum request attempts reached, could not delete category '{}' from zendesk", category.getName());
+        return false;
     }
 
 
@@ -265,10 +311,16 @@ public class ZendeskFacade {
         }
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
-                section.setName(newName);
-                section.setDescription(newDescription);
                 section.setPosition(newPosition);
-                return Optional.ofNullable(zendesk.updateSection(section));
+                Section sectionUpdated = zendesk.updateSection(section);
+                StreamSupport.stream(getTranslations(sectionUpdated).spliterator(), false)
+                        .findFirst()
+                        .ifPresent(t -> {
+                            t.setTitle(newName);
+                            t.setBody(newDescription);
+                            zendesk.updateSectionTranslation(sectionUpdated.getId(), t.getLocale(), t);
+                        });
+                return Optional.ofNullable(sectionUpdated);
             } catch (ZendeskResponseRateLimitException rateLimit) {
                 apiRateLimitWait(rateLimit.getRetryAfter());
             } catch (ZendeskResponseException e) {
@@ -309,19 +361,19 @@ public class ZendeskFacade {
             return addSection(categoryName, name, description, position);
         }
     }
-    public Optional<Section> getSection(Category category, String name, String description, long position, boolean update) {
+    public Optional<Section> getSection(Category category, String name, String newName, String description, long position, boolean update) {
         Optional<Section> sectionOpt = getSection(category, name);
         if (sectionOpt.isPresent()) {
             if (update) {
-                log.trace("updating section '{}': {} #{}", sectionOpt.get().getId(), name, position);
-                return updateSection(sectionOpt.get(), name, description, position);
+                log.trace("updating section '{}': {} #{}", sectionOpt.get().getId(), newName, position);
+                return updateSection(sectionOpt.get(), newName, description, position);
             } else {
                 log.trace("section found: {} #{}", sectionOpt.get().getId(), position);
                 return sectionOpt;
             }
         } else {
-            log.trace("adding section '{}' #{}", name, position);
-            return addSection(category, name, description, position);
+            log.trace("adding section '{}' #{}", newName, position);
+            return addSection(category, newName, description, position);
         }
     }
 
@@ -465,6 +517,12 @@ public class ZendeskFacade {
 
     public Iterable<Translation> getTranslations(Article article) {
         return zendesk.getArticleTranslations(article.getId());
+    }
+    public Iterable<Translation> getTranslations(Category category) {
+        return zendesk.getCategoryTranslations(category.getId());
+    }
+    public Iterable<Translation> getTranslations(Section section) {
+        return zendesk.getSectionTranslations(section.getId());
     }
 
     public Long getPermissionGroupId(String permissionGroupTitle) {

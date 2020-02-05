@@ -4,18 +4,20 @@ zendesk:
   comments-disabled     : false
 #  notify-subscribers    : true
   max-attempts          : 5
-  forced-update         : false
+  forced-update         : true
   publish               : true
 
 properties:
   template:
     category:
       title       : CATEGORY_TITLE
+      oldTitle    : CATEGORY_OLD_TITLE
       description : CATEGORY_DESCRIPTION
       position    : CATEGORY_POSITION
 
     section:
       title       : SECTION_TITLE
+      oldTitle    : SECTION_OLD_TITLE
       description : SECTION_DESCRIPTION
       position    : SECTION_POSITION
 

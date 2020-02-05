@@ -70,7 +70,6 @@ public class DirectoryProcessor {
                 .map(f -> fileProcessor.read(f, hierarchy))
                 .filter(od -> od.isPresent())
                 .map(od -> od.get())
-//                .filter(d -> !d.hidden()) // hidden documents also will be removed from zendesk (if previously were published)
                 .map(d -> d.title())
                 .collect(Collectors.toSet())
             ;
@@ -145,38 +144,3 @@ public class DirectoryProcessor {
     }
 
 }
-
-
-//        properties.putAll(readProperties(directoryPath));
-//        System.out.println("-----------------------------------------------------------");
-//        System.out.println("properties at " + directoryPath);
-//        properties.keySet().stream().forEach(k -> System.out.println(String.format("%20s: %s", k, properties.getProperty((String)k))));
-
-//        result.merge(removeStaleDocuments(directoryPath));
-
-//    private ProcessingResult removeStaleDocuments(String directoryPath) {
-//        return new ProcessingResult();
-//        try {
-//            ProcessingResult result = new ProcessingResult();
-//            List<Document> repositoryDocuments =
-//                Files.list(Paths.get(directoryPath))
-//                    .parallel()
-//                    .map(Path::toFile)
-//                    .filter(File::isFile)
-//                    .filter(f -> f.getName().endsWith(".adoc") || f.getName().endsWith(".asciidoc"))
-//                    .map(f -> f.getAbsolutePath())
-//                    .map(f -> fileProcessor.read(f))
-//                    .filter(f -> f.isPresent())
-//                    .map(f -> f.get())
-//                    .collect(Collectors.toList())
-//            ;
-//
-//            return result;
-//        } catch (IOException e) {
-//            log.error("error removing stale documents from {}: {}", directoryPath, e.getMessage());
-//            if (log.isTraceEnabled())
-//                e.printStackTrace();
-//            return ProcessingResult.PUBLICATION_FAILURE;
-//        }
-//    }
-

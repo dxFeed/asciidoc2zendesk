@@ -40,6 +40,7 @@ public class Processor {
                     log.warn("could not remove article '{}' from ZenDesk server", a.getTitle());
                 }
             });
+            zendeskFacade.getCategories().stream().forEach(c -> zendeskFacade.removeCategory(c));
         } else {
             if (StringUtils.isNotBlank(appConfig.dir()))
                 result.merge(directoryProcessor.process(appConfig.dir(), new ZendeskHierarchy()));
@@ -53,7 +54,6 @@ public class Processor {
             .append("publishing errors      : " + result.get(RT_PUB_FAILURE).get()).append("\n")
             .append("successfully removed   : " + result.get(RT_DEL_SUCCESS).get()).append("\n")
             .append("removal errors         : " + result.get(RT_DEL_FAILURE).get()).append("\n")
-//            .append("hidden documents       : " + result.get(RT_FILE_SKIPPED).get()).append("\n")
             .append("skipped directories    : " + result.get(RT_DIR_SKIPPED).get()).append("\n")
             .append("printed documents      : " + result.get(RT_FILE_PRINTED).get()).append("\n")
             .toString();

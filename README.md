@@ -17,6 +17,7 @@ according to following examples:
 * category-level `.properties` file
 ```
 CATEGORY_TITLE=Category 2 title
+CATEGORY_OLD_TITLE=... // [optional parameter]
 CATEGORY_DESCRIPTION=Category 2 description
 CATEGORY_POSITION=1
 ```
@@ -24,11 +25,16 @@ CATEGORY_POSITION=1
 * section-level `.properties` file
 ```
 SECTION_TITLE=Section 2.2 title
+SECTION_OLD_TITLE=... // [optional parameter]
 SECTION_DESCRIPTION=Section Section 2.2 description
 SECTION_POSITION=1
 ```
 
 NOTE: directories with no `.properties` file or with incorrect `.properties` syntax will be skipped. 
+
+NOTE: if category with `CATEGORY_OLD_TITLE` exists, it will be renamed to `CATEGORY_TITLE`
+
+NOTE: if section with `SECTION_OLD_TITLE` exists, it will be renamed to `SECTION_TITLE`
 
 ## Publishing to Zendesk
 To publish a document to zendesk server its meta-parameters should be known.
@@ -85,22 +91,4 @@ To insert TOC macro in resulting document use following syntax:
 {zwsp}
 
 ... the rest of document ...
-```
-
-## Disable document publishing
-For testing purposes or during documentation preparation you may need to prevent existing document
-from being published to zendesk server. For this you can use `ZENDESK-HIDDEN` header like this:
-```
-// prevents document from publication
-// :ZENDESK-HIDDEN:    
-```
-
-```
-// prevents document from publication
-// :ZENDESK-HIDDEN: true    
-```
-
-```
-// allows document publication
-// :ZENDESK-HIDDEN: false
 ```

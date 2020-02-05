@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static ws.slink.model.ProcessingResult.ResultType.*;
 
@@ -47,9 +46,6 @@ public class FileProcessor {
 
     @Value("${asciidoc.template.position}")
     private String positionTemplate;
-
-//    @Value("${asciidoc.template.hidden}")
-//    private String hiddenTemplate;
 
     @Value("${asciidoc.template.draft}")
     private String draftTemplate;
@@ -147,7 +143,6 @@ public class FileProcessor {
                     .title(getDocumentParam(lines, titleTemplate, null))
                     .oldTitle(getDocumentParam(lines, titleOldTemplate, null))
                     .position(getDocumentIntParam(lines, positionTemplate, Integer.MAX_VALUE))
-//                    .hidden(getDocumentBooleanParam(lines, hiddenTemplate))
                     .draft(getDocumentBooleanParam(lines, draftTemplate))
                     .promoted(getDocumentBooleanParam(lines, promotedTemplate))
                     .contents(lines.stream().collect(Collectors.joining("\n")))
@@ -199,63 +194,50 @@ public class FileProcessor {
     public ProcessingResult publishOrPrint(Document document, String convertedDocument, ZendeskHierarchy hierarchy) {
 
         if (performPublication) { // publish document
-//            if (document.hidden()) {
-//                log.info("skipping hidden article '{}'", document.title());
-//                return new ProcessingResult(RT_FILE_SKIPPED);
-//            } else {
-                // for renaming support we need to query existing articles either with document's 'title' or 'oldTitle'
-                String requestTitle = StringUtils.isBlank(document.oldTitle()) ? document.title() : document.oldTitle();
+            // for renaming support we need to query existing articles either with document's 'title' or 'oldTitle'
+            String requestTitle = StringUtils.isBlank(document.oldTitle()) ? document.title() : document.oldTitle();
 
-                Optional<Article> requestedArticle = zendeskFacade.getArticle(hierarchy.section(), requestTitle);
+            Optional<Article> requestedArticle = zendeskFacade.getArticle(hierarchy.section(), requestTitle);
 
-                // if we're trying to rename already renamed document (forgot to clean OLD-TITLE tag)
-                if (!requestedArticle.isPresent()) {
-                    requestedArticle = zendeskFacade.getArticle(hierarchy.section(), document.title());
-                }
+            // if we're trying to rename already renamed document (forgot to clean OLD-TITLE tag)
+            if (!requestedArticle.isPresent()) {
+                requestedArticle = zendeskFacade.getArticle(hierarchy.section(), document.title());
+            }
 
-                Optional<Article> newArticle;
+            Optional<Article> newArticle;
+            if (requestedArticle.isPresent()) {
+                log.trace("updating existing article '{}'", requestedArticle.get().getTitle());
+                newArticle = zendeskTools.updateArticle(requestedArticle.get(), document, convertedDocument);
+            } else {
+                log.trace("creating new article '{}'", requestTitle);
+                newArticle = zendeskTools.createArticle(document, hierarchy.section(), convertedDocument);
+            }
+
+            if (!newArticle.isPresent()) {
+                log.warn("could not create or update article '{}'", requestTitle);
+                return new ProcessingResult(RT_PUB_FAILURE);
+            } else {
+                Optional<Article> processedArticle;
                 if (requestedArticle.isPresent()) {
-                    log.trace("updating existing article '{}'", requestedArticle.get().getTitle());
-                    newArticle = zendeskTools.updateArticle(requestedArticle.get(), document, convertedDocument);
+                    log.trace("updating existing article in zendesk '{}'", newArticle.get().getTitle());
+                    processedArticle = zendeskFacade.updateArticle(newArticle.get());
                 } else {
-                    log.trace("creating new article '{}'", requestTitle);
-                    newArticle = zendeskTools.createArticle(document, hierarchy.section(), convertedDocument);
+                    log.trace("creating new article in zendesk '{}'", newArticle.get().getTitle());
+                    processedArticle = zendeskFacade.addArticle(newArticle.get());
                 }
-
-                if (!newArticle.isPresent()) {
-                    log.warn("could not create or update article '{}'", requestTitle);
+                if (!processedArticle.isPresent()) {
+                    log.warn("could not create or update article '{}' on zendesk server", newArticle.get().getTitle());
                     return new ProcessingResult(RT_PUB_FAILURE);
-                } else {
-                    Optional<Article> processedArticle;
-                    if (requestedArticle.isPresent()) {
-                        log.trace("updating existing article in zendesk '{}'", newArticle.get().getTitle());
-                        processedArticle = zendeskFacade.updateArticle(newArticle.get());
-                    } else {
-                        log.trace("creating new article in zendesk '{}'", newArticle.get().getTitle());
-                        processedArticle = zendeskFacade.addArticle(newArticle.get());
-                    }
-                    if (!processedArticle.isPresent()) {
-                        log.warn("could not create or update article '{}' on zendesk server", newArticle.get().getTitle());
-                        return new ProcessingResult(RT_PUB_FAILURE);
-                    }
                 }
-                if (document.draft())
-                    return new ProcessingResult(RT_PUB_SUCCESS).add(RT_PUB_DRAFT);
-                else
-                    return new ProcessingResult(RT_PUB_SUCCESS);
-//            }
+            }
+            if (document.draft())
+                return new ProcessingResult(RT_PUB_SUCCESS).add(RT_PUB_DRAFT);
+            else
+                return new ProcessingResult(RT_PUB_SUCCESS);
         } else { // just print document to stdout
             System.out.println("-------------------------------------------------------------------------------------");
             document.print("    ");
             System.out.println(convertedDocument);
-
-//            Optional<Article> requestedArticle = zendeskFacade.getArticle(hierarchy.section(), document.title());
-//            System.out.println(requestedArticle);
-//            System.out.println("\nTranslations: ");
-//            requestedArticle.ifPresent(article ->
-//                StreamSupport.stream(zendeskFacade.getTranslations(article).spliterator(), false)
-//                    .forEach(System.out::println));
-
             return new ProcessingResult(RT_FILE_PRINTED);
         }
     }
@@ -310,73 +292,3 @@ public class FileProcessor {
         }
     }
 }
-
-
-
-
-
-
-//        zendeskTools.createArticle(document, hierarchy.section(), convertedDocument)
-//            .ifPresent(a -> {
-//
-//            });
-
-//        System.out.println("-----------------------------------------------------------------------------------------");
-//        document.print("    ");
-//        if (StringUtils.isNotBlank(appConfig.getUrl())) {
-//            if (!confluence.canPublish()) {
-//                log.warn("can't publish document '" + document.inputFilename() + "' to confluence: not all confluence parameters are set (url, login, password)");
-//                return ProcessingResult.FAILURE;
-//            } else {
-//                if (!document.canPublish()) {
-//                    log.warn("can't publish document '" + document.inputFilename() + "' to confluence: not all document parameters are set (title, spaceKey)");
-//                    return ProcessingResult.FAILURE;
-//                } else {
-//                    // delete page
-//                    confluence.getPageId(document.space(), document.title()).ifPresent(id -> confluence.deletePage(id, document.title()));
-//                    // delete old page in case of renaming
-//                    if (StringUtils.isNotBlank(document.oldTitle()))
-//                        confluence.getPageId(document.space(), document.oldTitle()).ifPresent(id -> confluence.deletePage(id, document.oldTitle()));
-//                    // check if document needs to be published
-//                    if (!document.hidden()) {
-//                        // publish to confluence
-//                        if (confluence.publishPage(document.space(), document.title(), document.parent(), convertedDocument)) {
-//                            log.info(
-//                                String.format(
-//                                    "Published document to confluence: %s/display/%s/%s"
-//                                    , appConfig.getUrl()
-//                                    , document.space()
-//                                    , document.title().replaceAll(" ", "+")
-//                                )
-//                            );
-//                            if (confluence.tagPage(document.space(), document.title(), document.tags())) {
-//                                log.info(
-//                                    String.format(
-//                                        "Labeled document with tags: %s"
-//                                        , document.tags()
-//                                    )
-//                                );
-//                            }requestTitle
-//                            return ProcessingResult.SUCCESS;
-//                        } else {
-//                            log.warn(
-//                                String.format(
-//                                    "Could not publish document '%s' to confluence server"
-//                                    , document.title()
-//                                )
-//                            );
-//                            if (appConfig.isDebug())
-//                                System.out.println(convertedDocument);
-//                            return ProcessingResult.FAILURE;
-//                        }
-//                    } else {
-//                        log.warn("document '{}' is hidden, skip publishing", document.title());
-//                        return ProcessingResult.HIDDEN;
-//                    }
-//                }
-//            }
-//        } else {
-//            // or print to stdout
-//            System.out.println(convertedDocument);
-//            return ProcessingResult.SUCCESS;
-//        }

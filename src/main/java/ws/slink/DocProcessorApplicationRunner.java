@@ -33,7 +33,6 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
 
     @Override
     public void run(String... args) {
-
         int exitCode = 0;
 
         if (!checkConfiguration()) {
@@ -46,7 +45,6 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
         // close up
         applicationContext.close();
         System.exit(exitCode);
-
     }
 
     private boolean checkConfiguration() {
@@ -72,40 +70,3 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
     }
 
 }
-
-
-
- // Мета-параметры документа
-     // + :ZENDESK-CATEGORY:  // не надо, т.к. структурированный каталог - см. ".properties"
-     // + :ZENDESK-SECTION:   // не надо, т.к. структурированный каталог - см. ".properties"
-     // + :ZENDESK-TITLE:     // заголовок документа
-     // + :ZENDESK-OLD-TITLE: // для переименования - если указан, то делаем "PUT" для документа с новым именем и старым ID
-     // + :ZENDESK-ORDER:     // он же "position" - сортировка
-     // + :ZENDESK-TAGS:      // CSV-список меток
-     // + :ZENDESK-DRAFT:     //
-     // + :ZENDESK-PROMOTED:  // true / false для публикации на главной странице
-     // + :ZENDESK-HIDDEN:    // deny document publication
-
- // Параметры по-умолчанию
-     // - user_segment_id       = null
-     // + permission_group_id   = 'Agents and managers' - application.yml
-     // + locale                = en-US                 - application.yml
-     // + comments_disabled     = false
-     // + notify_subscribers    = true
-     // + body
-
- // readonly-параметры (сбросятся при перезаписи)
-     // vote-sum
-     // vote-count
-
- // удаляем всё, чего нет в репе (уже после публикации)
-
- // создаём, если такого документа нет, или редактируем, если он есть
- // добавить поддержку переименования (?)
-
- // --properties=... // для тестов можем всё писать в тестовую категорию
-
- // поддержка разных языков?
-
- // удаление -> архивация
- // - label_names

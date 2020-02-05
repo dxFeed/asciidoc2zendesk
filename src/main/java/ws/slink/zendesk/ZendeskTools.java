@@ -12,8 +12,6 @@ import org.zendesk.client.v2.model.hc.Category;
 import org.zendesk.client.v2.model.hc.Section;
 import ws.slink.model.Document;
 
-import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -27,6 +25,9 @@ public class ZendeskTools {
     @Value("${properties.template.category.title}")
     private String categoryTitleTemplate;
 
+    @Value("${properties.template.category.oldTitle}")
+    private String categoryOldTitleTemplate;
+
     @Value("${properties.template.category.description}")
     private String categoryDescriptionTemplate;
 
@@ -35,6 +36,9 @@ public class ZendeskTools {
 
     @Value("${properties.template.section.title}")
     private String sectionTitleTemplate;
+
+    @Value("${properties.template.section.oldTitle}")
+    private String sectionOldTitleTemplate;
 
     @Value("${properties.template.section.description}")
     private String sectionDescriptionTemplate;
@@ -56,13 +60,15 @@ public class ZendeskTools {
 
     public boolean updateHierarchy(ZendeskHierarchy hierarchy, Properties properties) {
 
-        String catName = properties.getProperty(categoryTitleTemplate, null);
-        String catDesc = properties.getProperty(categoryDescriptionTemplate, "");
-        int     catPos = Integer.valueOf(properties.getProperty(categoryPositionTemplate, "0"));
+        String catName    = properties.getProperty(categoryTitleTemplate, null);
+        String catOldName = properties.getProperty(categoryOldTitleTemplate, null);
+        String catDesc    = properties.getProperty(categoryDescriptionTemplate, "");
+        int     catPos    = Integer.valueOf(properties.getProperty(categoryPositionTemplate, "0"));
 
-        String secName = properties.getProperty(sectionTitleTemplate, null);
-        String secDesc = properties.getProperty(sectionDescriptionTemplate, "");
-        int     secPos = Integer.valueOf(properties.getProperty(sectionPositionTemplate, "0"));
+        String secName    = properties.getProperty(sectionTitleTemplate, null);
+        String secOldName = properties.getProperty(sectionOldTitleTemplate, null);
+        String secDesc    = properties.getProperty(sectionDescriptionTemplate, "");
+        int     secPos    = Integer.valueOf(properties.getProperty(sectionPositionTemplate, "0"));
 
         if (StringUtils.isBlank(catName) && (StringUtils.isBlank(secName))) {
             log.warn("neither category nor section name set in properties");
@@ -76,8 +82,15 @@ public class ZendeskTools {
 
         // load category if needed
         if (!StringUtils.isBlank(catName) && (null == hierarchy.category() || !hierarchy.category().getName().equalsIgnoreCase(catName))) {
-            Optional<Category> categoryOpt = zendeskFacade.getCategory(catName, catDesc, catPos, shouldUpdate);
+            if (StringUtils.isBlank(catOldName)) {
+                catOldName = catName;
+//                log.warn(">>> KEEPING '{}' -> '{}'", catOldName, catName);
+            } else {
+                log.warn(">>> RENAMING '{}' -> '{}'", catOldName, catName);
+            }
+            Optional<Category> categoryOpt = zendeskFacade.getCategory(catOldName, catName, catDesc, catPos, shouldUpdate);
             if (categoryOpt.isPresent()) {
+                log.trace("~~~~~~~~~ got category: '{}' #{} #{}", categoryOpt.get().getName(), categoryOpt.get().getPosition(), categoryOpt.get().getId());
                 hierarchy.category(categoryOpt.get());
             } else {
                 log.warn("could not load category '{}'", catName);
@@ -85,13 +98,16 @@ public class ZendeskTools {
             }
         }
 
+        if (StringUtils.isBlank(secOldName))
+            secOldName = secName;
+
         // load section if needed
         if (!StringUtils.isBlank(secName) && (null == hierarchy.section() || !hierarchy.section().getName().equalsIgnoreCase(secName))) {
             if (null == hierarchy.category()) {
                 log.warn("category not set in hierarchy structure");
                 return false;
             }
-            Optional<Section> sectionOpt = zendeskFacade.getSection(hierarchy.category(), secName, secDesc, secPos, shouldUpdate);
+            Optional<Section> sectionOpt = zendeskFacade.getSection(hierarchy.category(), secOldName, secName, secDesc, secPos, shouldUpdate);
             if (sectionOpt.isPresent()) {
                 hierarchy.section(sectionOpt.get());
             } else {

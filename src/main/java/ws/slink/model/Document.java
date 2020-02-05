@@ -18,7 +18,6 @@ public class Document {
     private String   title;
     private String   oldTitle;
     private long     position = 0;
-//    private boolean  hidden   = false;
     private boolean  draft    = false;
     private boolean  promoted = false;
     private String   contents;
@@ -51,7 +50,6 @@ public class Document {
         System.out.println(prefix + "title         : " + title);
         System.out.println(prefix + "old title     : " + oldTitle);
         System.out.println(prefix + "position      : " + position);
-//        System.out.println(prefix + "hidden        : " + hidden);
         System.out.println(prefix + "draft         : " + draft);
         System.out.println(prefix + "promoted      : " + promoted);
         System.out.println(prefix + "tags          : " + tags);
