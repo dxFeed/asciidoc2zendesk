@@ -36,7 +36,7 @@ public class DirectoryProcessor {
     private final @NonNull ZendeskFacade zendeskFacade;
 
     public ProcessingResult process(String directoryPath, ZendeskHierarchy hierarchy) {
-        log.trace("> start directory processing: '{}'", directoryPath);
+        log.info("> start directory processing: '{}'", directoryPath);
         ProcessingResult result = new ProcessingResult();
 
         if (!zendeskTools.updateHierarchy(hierarchy, readProperties(directoryPath))) {

@@ -48,8 +48,8 @@ public class FileProcessor {
     @Value("${asciidoc.template.position}")
     private String positionTemplate;
 
-    @Value("${asciidoc.template.hidden}")
-    private String hiddenTemplate;
+//    @Value("${asciidoc.template.hidden}")
+//    private String hiddenTemplate;
 
     @Value("${asciidoc.template.draft}")
     private String draftTemplate;
@@ -122,7 +122,7 @@ public class FileProcessor {
     }
 
     public ProcessingResult process(String inputFilename, ZendeskHierarchy hierarchy) {
-        log.trace(">> start file processing: '{}'", inputFilename);
+        log.info(">> start file processing: '{}'", inputFilename);
         ProcessingResult result = new ProcessingResult();
         if (StringUtils.isNotBlank(inputFilename))
             read(inputFilename, hierarchy).ifPresent(d -> convert(d).ifPresent(cd -> result.merge(publishOrPrint(d, cd, hierarchy))));
@@ -147,7 +147,7 @@ public class FileProcessor {
                     .title(getDocumentParam(lines, titleTemplate, null))
                     .oldTitle(getDocumentParam(lines, titleOldTemplate, null))
                     .position(getDocumentIntParam(lines, positionTemplate, Integer.MAX_VALUE))
-                    .hidden(getDocumentBooleanParam(lines, hiddenTemplate))
+//                    .hidden(getDocumentBooleanParam(lines, hiddenTemplate))
                     .draft(getDocumentBooleanParam(lines, draftTemplate))
                     .promoted(getDocumentBooleanParam(lines, promotedTemplate))
                     .contents(lines.stream().collect(Collectors.joining("\n")))
@@ -199,10 +199,10 @@ public class FileProcessor {
     public ProcessingResult publishOrPrint(Document document, String convertedDocument, ZendeskHierarchy hierarchy) {
 
         if (performPublication) { // publish document
-            if (document.hidden()) {
-                log.info("skipping hidden article '{}'", document.title());
-                return new ProcessingResult(RT_FILE_SKIPPED);
-            } else {
+//            if (document.hidden()) {
+//                log.info("skipping hidden article '{}'", document.title());
+//                return new ProcessingResult(RT_FILE_SKIPPED);
+//            } else {
                 // for renaming support we need to query existing articles either with document's 'title' or 'oldTitle'
                 String requestTitle = StringUtils.isBlank(document.oldTitle()) ? document.title() : document.oldTitle();
 
@@ -239,8 +239,11 @@ public class FileProcessor {
                         return new ProcessingResult(RT_PUB_FAILURE);
                     }
                 }
-                return new ProcessingResult(RT_PUB_SUCCESS);
-            }
+                if (document.draft())
+                    return new ProcessingResult(RT_PUB_SUCCESS).add(RT_PUB_DRAFT);
+                else
+                    return new ProcessingResult(RT_PUB_SUCCESS);
+//            }
         } else { // just print document to stdout
             System.out.println("-------------------------------------------------------------------------------------");
             document.print("    ");

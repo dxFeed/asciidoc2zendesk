@@ -24,7 +24,6 @@ asciidoc:
     title     : ":ZENDESK-TITLE:"
     title-old : ":ZENDESK-OLD-TITLE:"
     position  : ":ZENDESK-ORDER:"
-    hidden    : ":ZENDESK-HIDDEN:"
     tags      : ":ZENDESK-TAGS:"
     draft     : ":ZENDESK-DRAFT:"
     promoted  : ":ZENDESK-PROMOTED:"
