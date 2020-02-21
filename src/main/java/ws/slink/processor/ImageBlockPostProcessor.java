@@ -18,21 +18,21 @@ public class ImageBlockPostProcessor extends Postprocessor {
 
         // process center-aligned images
         doc.select("div.imageblock.text-center").stream().forEach(element -> {
-            System.err.println(element.toString());
+//            System.err.println(element.toString());
             Element content = element.selectFirst("div.content");
             content.addClass("wysiwyg-text-align-center");
         });
 
         // process left-aligned images
         doc.select("div.imageblock.text-left").stream().forEach(element -> {
-            System.err.println(element.toString());
+//            System.err.println(element.toString());
             Element content = element.selectFirst("div.content");
             content.addClass("wysiwyg-text-align-left");
         });
 
         // process right-aligned images
         doc.select("div.imageblock.text-right").stream().forEach(element -> {
-            System.err.println(element.toString());
+//            System.err.println(element.toString());
             Element content = element.selectFirst("div.content");
             content.addClass("wysiwyg-text-align-right");
         });

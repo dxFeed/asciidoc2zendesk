@@ -45,7 +45,6 @@ Parser takes these parameters from comments in input file:
 // :ZENDESK-ORDER:      <number>             // article sorting position 
 // :ZENDESK-DRAFT:      {true|false}         // create article as a draft
 // :ZENDESK-PROMOTED:   {true|false}         // set 'promoted' flag for an article    
-// :ZENDESK-HIDDEN:     {true|false}         // if true, artibcle will be skipped from publishing
 // :ZENDESK-TAGS:       <CSV list of labels> // comma-separated list of article labels
 // :ZENDESK-OLD-TITLE:  <text>               // previous article title to be used for article renaming [optional parameter]
 ```
