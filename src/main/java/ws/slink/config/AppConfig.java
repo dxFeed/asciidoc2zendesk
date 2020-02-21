@@ -29,6 +29,7 @@ public class AppConfig {
     private String  url;
     private String  user;
     private String  token;
+    private String  input;
     private String  profile; // configuration file suffix (.properties.profile)
     private Integer group;
     private boolean clean;

@@ -12,8 +12,12 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
+import org.zendesk.client.v2.model.hc.Category;
+import org.zendesk.client.v2.model.hc.Section;
 import ws.slink.config.AppConfig;
+import ws.slink.parser.FileProcessor;
 import ws.slink.parser.Processor;
+import ws.slink.zendesk.ZendeskHierarchy;
 
 @Slf4j
 @Component
@@ -23,6 +27,7 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
 
     private final @NonNull AppConfig appConfig;
     private final @NonNull Processor processor;
+    private final @NonNull FileProcessor fileProcessor;
 
     private ConfigurableApplicationContext applicationContext;
 
@@ -35,13 +40,20 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
     public void run(String... args) {
         int exitCode = 0;
 
-        if (!checkConfiguration()) {
-            printUsage();
-            exitCode = 1;
+        if (StringUtils.isNotBlank(appConfig.input())) {
+            fileProcessor
+                .read(appConfig.input(), new ZendeskHierarchy().category(new Category()).section(new Section()))
+                .map(fileProcessor::convert)
+                .ifPresent(System.out::println)
+            ;
         } else {
-            System.out.println(processor.process());
+            if (!checkConfiguration()) {
+                printUsage();
+                exitCode = 1;
+            } else {
+                System.out.println(processor.process());
+            }
         }
-
         // close up
         applicationContext.close();
         System.exit(exitCode);

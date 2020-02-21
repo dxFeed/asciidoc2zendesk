@@ -17,6 +17,9 @@ import ws.slink.config.AppConfig;
 import ws.slink.model.Document;
 import ws.slink.model.ProcessingResult;
 import ws.slink.processor.CodeBlockPostProcessor;
+import ws.slink.processor.ImageBlockPostProcessor;
+import ws.slink.processor.VideoBlockMacroProcessor;
+import ws.slink.processor.VideoMacroPreProcessor;
 import ws.slink.zendesk.ZendeskFacade;
 import ws.slink.zendesk.ZendeskHierarchy;
 import ws.slink.zendesk.ZendeskTools;
@@ -98,21 +101,17 @@ public class FileProcessor {
         Asciidoctor asciidoctor = Asciidoctor.Factory.create();
 
         // register preprocessors
-//        asciidoctor.javaExtensionRegistry().preprocessor(CodeBlockPreProcessor.class);
-//        asciidoctor.javaExtensionRegistry().preprocessor(ConfluenceLinkMacroPreProcessor.class);
-//        asciidoctor.javaExtensionRegistry().preprocessor(TreeMacroPreProcessor.class);
+        asciidoctor.javaExtensionRegistry().preprocessor(VideoMacroPreProcessor.class);
 
         // register block processors
-//        asciidoctor.javaExtensionRegistry().block(CodeBlockProcessor.class);
+        // ...
 
-        // register (inline) macro processors
-//        asciidoctor.javaExtensionRegistry().inlineMacro(new ConfluenceLinkInlineMacroProcessor(document.space()));
-//        asciidoctor.javaExtensionRegistry().blockMacro(TreeMacroProcessor.class);
+        // register (block) macro processors
+        asciidoctor.javaExtensionRegistry().blockMacro(VideoBlockMacroProcessor.class);
 
         // register postprocessors
         asciidoctor.javaExtensionRegistry().postprocessor(CodeBlockPostProcessor.class);
-//        asciidoctor.javaExtensionRegistry().postprocessor(NoticeBlockPostProcessor.class);
-//        asciidoctor.javaExtensionRegistry().postprocessor(TOCBlockPostProcessor.class);
+        asciidoctor.javaExtensionRegistry().postprocessor(ImageBlockPostProcessor.class);
 
         return asciidoctor;
     }
