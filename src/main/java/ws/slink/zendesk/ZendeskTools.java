@@ -1,5 +1,6 @@
 package ws.slink.zendesk;
 
+import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,8 +50,11 @@ public class ZendeskTools {
     @Value("${zendesk.forced-update:false}")
     private boolean shouldUpdate;
 
-    @Value("${zendesk.permission-group-title}")
+    @Value("${zendesk.permission-group-title:}")
     private String permissionGroupTitle;
+
+//    @Value("${zendesk.permission-group-id:}")
+//    private Integer permissionGroupId;
 
     @Value("${zendesk.locale:en-us}")
     private String locale;
@@ -119,7 +123,7 @@ public class ZendeskTools {
         return true;
     }
 
-    public Optional<Article> createArticle(Document document, Section section, String contents) {
+    public Optional<Article> createArticle(Document document, Section section, String contents, Integer groupId) {
         if (null == document || null == section || StringUtils.isBlank(contents))
             return Optional.empty();
         try {
@@ -132,7 +136,11 @@ public class ZendeskTools {
             article.setBody(contents);
             article.setLabelNames(document.tags());
             article.setUserSegmentId(null);
-            article.setPermissionGroupId(zendeskFacade.getPermissionGroupId(permissionGroupTitle));
+            article.setPermissionGroupId(
+                (null == groupId)
+                ? zendeskFacade.getPermissionGroupId(permissionGroupTitle)
+                : groupId
+            );
             article.setCommentsDisabled(commentsDisabled);
             return Optional.of(article);
         } catch (Exception e) {

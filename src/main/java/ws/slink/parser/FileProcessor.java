@@ -210,7 +210,7 @@ public class FileProcessor {
                 newArticle = zendeskTools.updateArticle(requestedArticle.get(), document, convertedDocument);
             } else {
                 log.trace("creating new article '{}'", requestTitle);
-                newArticle = zendeskTools.createArticle(document, hierarchy.section(), convertedDocument);
+                newArticle = zendeskTools.createArticle(document, hierarchy.section(), convertedDocument, appConfig.group());
             }
 
             if (!newArticle.isPresent()) {

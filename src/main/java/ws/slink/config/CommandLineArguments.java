@@ -32,6 +32,9 @@ public class CommandLineArguments {
         if (args.containsOption("token")) {
             appConfig.token(args.getOptionValues("token").get(0));
         }
+        if (args.containsOption("group")) {
+            appConfig.group(Integer.parseInt(args.getOptionValues("group").get(0)));
+        }
 //        if (args.containsOption("pass")) {
 //            appConfig.setPass(args.getOptionValues("pass").get(0));
 //        }

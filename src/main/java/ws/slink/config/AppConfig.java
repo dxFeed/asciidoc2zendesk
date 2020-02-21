@@ -25,11 +25,12 @@ import org.springframework.stereotype.Component;
 @Accessors(fluent = true)
 public class AppConfig {
 
-    private String dir;
-    private String url;
-    private String user;
-    private String token;
-    private String profile; // configuration file suffix (.properties.profile)
+    private String  dir;
+    private String  url;
+    private String  user;
+    private String  token;
+    private String  profile; // configuration file suffix (.properties.profile)
+    private Integer group;
     private boolean clean;
     private boolean deleteAll;
 
