@@ -15,7 +15,9 @@ import ws.slink.config.AppConfig;
 import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -23,6 +25,10 @@ import java.util.stream.StreamSupport;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ZendeskFacade {
+
+    private Map<String, Category> cachedCategories = new ConcurrentHashMap<>();
+    private Map<String, Section>  cachedSections   = new ConcurrentHashMap<>();
+    private Map<String, Article>  cachedArticles   = new ConcurrentHashMap<>();
 
     private final @NonNull AppConfig appConfig;
 
@@ -44,7 +50,6 @@ public class ZendeskFacade {
             log.warn("Could not initialize ZenDesk client");
         }
     }
-
 
     public List<Category> getCategories() {
         for (int i = 0; i < maxRequestAttempts; i++) {
@@ -179,7 +184,7 @@ public class ZendeskFacade {
      * @return Optional<Category> or empty if error occurred
      */
     public Optional<Category> getCategory(String name, String newName, String description, long position, boolean update) {
-        Optional<Category> categoryOpt = getCategory(name);
+        Optional<Category> categoryOpt = getCategoryByName(name);
         if (categoryOpt.isPresent()) {
             if (update) {
                 log.trace("updating category '{}': {} #{}", categoryOpt.get().getId(), newName, position);
@@ -214,13 +219,34 @@ public class ZendeskFacade {
         return false;
     }
 
-
     /**
      * retrieve section from zendesk by category and sectionName
      *
      * @param sectionName
      * @return Optional<Section> or empty if no category found or error occurred
      */
+    public Optional<Section> getSection(String sectionName) {
+        for (int i = 0; i < maxRequestAttempts; i++) {
+            try {
+                return StreamSupport
+                        .stream(zendesk.getSections().spliterator(), true)
+                        .filter(v -> v.getName().equalsIgnoreCase(sectionName))
+                        .findFirst();
+            } catch (ZendeskResponseRateLimitException rateLimit) {
+                apiRateLimitWait(rateLimit.getRetryAfter());
+            } catch (ZendeskResponseException e) {
+                log.warn("zendesk exception occurred requesting section '{}': {} {}", sectionName, e.getStatusCode(), e.getStatusText());
+//                if (log.isTraceEnabled())
+//                    log.warn("{}", e.getBody());
+            } catch (Exception e) {
+                log.warn("error requesting section '{}' from zendesk: {}", sectionName, e.getMessage());
+                if (log.isTraceEnabled())
+                    e.printStackTrace();
+            }
+        }
+        log.info("maximum request attempts reached, no data received from zendesk");
+        return Optional.empty();
+    }
     public Optional<Section> getSection(Category category, String sectionName) {
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
@@ -243,15 +269,15 @@ public class ZendeskFacade {
         log.info("maximum request attempts reached, no data received from zendesk");
         return Optional.empty();
     }
-    public Optional<Section> getSection(String categoryName, String sectionName) {
-        Optional<Category> categoryOpt = getCategory(categoryName);
-        if (categoryOpt.isPresent()) {
-            return getSection(categoryOpt.get(), sectionName);
-        } else {
-            log.trace("no category found for name '{}', won't query for section '{}'", categoryOpt, sectionName);
-            return Optional.empty();
-        }
-    }
+//    public Optional<Section> getSection(String categoryName, String sectionName) {
+//        Optional<Category> categoryOpt = getCategoryByName(categoryName);
+//        if (categoryOpt.isPresent()) {
+//            return getSection(categoryOpt.get(), sectionName);
+//        } else {
+//            log.trace("no category found for name '{}', won't query for section '{}'", categoryOpt, sectionName);
+//            return Optional.empty();
+//        }
+//    }
     /**
      * add section to zendesk server
      *
@@ -285,7 +311,7 @@ public class ZendeskFacade {
         return Optional.empty();
     }
     public Optional<Section> addSection(String categoryName, String name, String description, long position) {
-        Optional<Category> categoryOpt = getCategory(categoryName);
+        Optional<Category> categoryOpt = getCategoryByName(categoryName);
         if (categoryOpt.isPresent()) {
             return addSection(categoryOpt.get(), name, description, position);
         } else {
@@ -347,7 +373,7 @@ public class ZendeskFacade {
      * @return Optional<Section> or empty if error occurred
      */
     public Optional<Section> getSection(String categoryName, String name, String description, long position, boolean update) {
-        Optional<Section> sectionOpt = getSection(categoryName, name);
+        Optional<Section> sectionOpt = getSectionByName(categoryName, name);
         if (sectionOpt.isPresent()) {
             if (update) {
                 log.trace("updating section '{}': {} #{}", sectionOpt.get().getId(), name, position);
@@ -376,7 +402,6 @@ public class ZendeskFacade {
             return addSection(category, newName, description, position);
         }
     }
-
 
     public List<Article> getArticles(Section section) {
         for (int i = 0; i < maxRequestAttempts; i++) {
@@ -421,7 +446,28 @@ public class ZendeskFacade {
         return Collections.EMPTY_LIST;
     }
 
-
+    public Optional<Article> getArticle(String articleTitle) {
+        for (int i = 0; i < maxRequestAttempts; i++) {
+            try {
+                return StreamSupport
+                        .stream(zendesk.getArticles().spliterator(), true)
+                        .filter(v -> v.getTitle().equalsIgnoreCase(articleTitle))
+                        .findFirst();
+            } catch (ZendeskResponseRateLimitException rateLimit) {
+                apiRateLimitWait(rateLimit.getRetryAfter());
+            } catch (ZendeskResponseException e) {
+                log.warn("zendesk exception occurred requesting article '{}': {} {} {}", articleTitle, e.getStatusCode(), e.getStatusText(), e.getMessage());
+//                if (log.isTraceEnabled())
+//                    log.warn("{}", e.getBody());
+            } catch (Exception e) {
+                log.warn("error requesting article '{}' from zendesk: {}", articleTitle, e.getMessage());
+                if (log.isTraceEnabled())
+                    e.printStackTrace();
+            }
+        }
+        log.info("Maximum request attempts reached, no data received from Zendesk");
+        return Optional.empty();
+    }
     public Optional<Article> getArticle(Section section, String articleTitle) {
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
@@ -447,7 +493,14 @@ public class ZendeskFacade {
     public Optional<Article> addArticle(Article article) {
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
-                return Optional.ofNullable(zendesk.createArticle(article));
+                Article createdArticle = zendesk.createArticle(article);
+                // update cache
+                if (null != createdArticle) {
+                    cachedArticles.put(createdArticle.getTitle(), createdArticle);
+                } else {
+                    cachedArticles.remove(article.getTitle());
+                }
+                return Optional.ofNullable(createdArticle);
             } catch (ZendeskResponseRateLimitException rateLimit) {
                 apiRateLimitWait(rateLimit.getRetryAfter());
             } catch (ZendeskResponseException e) {
@@ -480,6 +533,12 @@ public class ZendeskFacade {
 //                        }
                     }
                  );
+                // update cache
+                if (updatedArticle.isPresent()) {
+                    cachedArticles.put(updatedArticle.get().getTitle(), updatedArticle.get());
+                } else {
+                    cachedArticles.remove(article.getTitle());
+                }
                 return updatedArticle;
             } catch (ZendeskResponseRateLimitException rateLimit) {
                 apiRateLimitWait(rateLimit.getRetryAfter());
@@ -541,6 +600,76 @@ public class ZendeskFacade {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    public Optional<Category> getCategoryByName(String name) {
+        if (cachedCategories.containsKey(name)) {
+            return Optional.of(cachedCategories.get(name));
+        } else {
+            Optional<Category> categoryOpt = getCategory(name);
+            if (categoryOpt.isPresent())
+                cachedCategories.put(name, categoryOpt.get());
+            return categoryOpt;
+        }
+    }
+    public Optional<Section> getSectionByName(String categoryName, String sectionName) {
+        Optional<Category> categoryOpt = getCategoryByName(categoryName);
+        if (categoryOpt.isPresent()) {
+            if (cachedSections.containsKey(sectionName)
+             && cachedSections.get(sectionName).getCategoryId() == categoryOpt.get().getId()) {
+                return Optional.of(cachedSections.get(sectionName));
+            } else {
+                Optional<Section> sectionOpt = getSection(categoryOpt.get(), sectionName);
+                if (sectionOpt.isPresent())
+                    cachedSections.put(sectionName, sectionOpt.get());
+                return sectionOpt;
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+    public Optional<Section> getSectionByName(String sectionName) {
+        if (cachedSections.containsKey(sectionName)) {
+            return Optional.of(cachedSections.get(sectionName));
+        } else {
+            Optional<Section> sectionOpt = getSection(sectionName);
+            if (sectionOpt.isPresent())
+                cachedSections.put(sectionName, sectionOpt.get());
+            return sectionOpt;
+        }
+    }
+    public Optional<Article> getArticleByName(String categoryName, String sectionName, String articleName) {
+        Optional<Section> sectionOpt = getSectionByName(categoryName, sectionName);
+        return getArticleBySectionAndTitle(sectionOpt, articleName);
+    }
+    public Optional<Article> getArticleByName(String sectionName, String articleName) {
+        Optional<Section> sectionOpt = getSectionByName(sectionName);
+        return getArticleBySectionAndTitle(sectionOpt, articleName);
+    }
+    private Optional<Article> getArticleBySectionAndTitle(Optional<Section> section, String articleName) {
+        if (section.isPresent()) {
+            if (cachedArticles.containsKey(articleName)
+            && cachedArticles.get(articleName).getSectionId() == section.get().getId()) {
+                return Optional.of(cachedArticles.get(articleName));
+            } else {
+                Optional<Article> articleOpt = getArticle(section.get(), articleName);
+                if (articleOpt.isPresent())
+                    cachedArticles.put(articleName, articleOpt.get());
+                return articleOpt;
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+    public Optional<Article> getArticleByName(String name) {
+        if (cachedArticles.containsKey(name)) {
+            return Optional.of(cachedArticles.get(name));
+        } else {
+            Optional<Article> articleOpt = getArticle(name);
+            if (articleOpt.isPresent())
+                cachedArticles.put(name, articleOpt.get());
+            return articleOpt;
         }
     }
 

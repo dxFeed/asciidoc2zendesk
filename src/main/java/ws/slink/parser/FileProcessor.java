@@ -16,10 +16,7 @@ import org.zendesk.client.v2.model.hc.Article;
 import ws.slink.config.AppConfig;
 import ws.slink.model.Document;
 import ws.slink.model.ProcessingResult;
-import ws.slink.processor.CodeBlockPostProcessor;
-import ws.slink.processor.ImageBlockPostProcessor;
-import ws.slink.processor.VideoBlockMacroProcessor;
-import ws.slink.processor.VideoMacroPreProcessor;
+import ws.slink.processor.*;
 import ws.slink.zendesk.ZendeskFacade;
 import ws.slink.zendesk.ZendeskHierarchy;
 import ws.slink.zendesk.ZendeskTools;
@@ -66,6 +63,8 @@ public class FileProcessor {
     private final @NonNull ZendeskTools zendeskTools;
     private final @NonNull ZendeskFacade zendeskFacade;
 
+    private Asciidoctor asciidoctor;
+
     @SuppressWarnings("unchecked")
     private void disableAccessWarnings() {
         try {
@@ -88,6 +87,7 @@ public class FileProcessor {
     @PostConstruct
     private void init() {
         disableAccessWarnings();
+        initializeAsciidoctor();
     }
 
     /**
@@ -96,12 +96,13 @@ public class FileProcessor {
      *
      * @param document
      */
-    private Asciidoctor initializeAsciidoctor(Document document) {
+    private void /*Asciidoctor*/ initializeAsciidoctor(/*Document document*/) {
 
-        Asciidoctor asciidoctor = Asciidoctor.Factory.create();
+        /*Asciidoctor*/ asciidoctor = Asciidoctor.Factory.create();
 
         // register preprocessors
         asciidoctor.javaExtensionRegistry().preprocessor(VideoMacroPreProcessor.class);
+        asciidoctor.javaExtensionRegistry().preprocessor(ZendeskLinkMacroPreProcessor.class);
 
         // register block processors
         // ...
@@ -109,11 +110,14 @@ public class FileProcessor {
         // register (block) macro processors
         asciidoctor.javaExtensionRegistry().blockMacro(VideoBlockMacroProcessor.class);
 
+        // register inline macro processors
+        asciidoctor.javaExtensionRegistry().inlineMacro(new ZendeskLinkInlineMacroProcessor(zendeskFacade));
+
         // register postprocessors
         asciidoctor.javaExtensionRegistry().postprocessor(CodeBlockPostProcessor.class);
         asciidoctor.javaExtensionRegistry().postprocessor(ImageBlockPostProcessor.class);
 
-        return asciidoctor;
+//        return asciidoctor;
     }
 
     public ProcessingResult process(String inputFilename, ZendeskHierarchy hierarchy) {
@@ -171,7 +175,7 @@ public class FileProcessor {
     }
 
     public Optional<String> convert(Document document) {
-        Asciidoctor asciidoctor = initializeAsciidoctor(document);
+//        Asciidoctor asciidoctor = initializeAsciidoctor(/*document*/);
         try {
             String result = asciidoctor
             .convertFile(
