@@ -1,0 +1,56 @@
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+name: Build & Release
+
+env:
+  ARTIFACT: asciidoc2zendesk
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Set env
+        run: |
+          echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
+          echo ::set-env name=ARTIFACT::${ARTIFACT}
+#          echo ::set-env name=ARTIFACT::$(echo ${ARTIFACT} | sed "s/%VERSION%/$(echo ${GITHUB_REF:10})/g" )
+      - name: Build
+        run: |
+          ./mvnw clean package
+          cd target
+          tar cvfz ${{ env.ARTIFACT }}.tar.gz ${{ env.ARTIFACT }}.jar
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ env.ARTIFACT }}-bin.tar.gz
+          path: target/${{ env.ARTIFACT }}.tar.gz
+
+  publish:
+    runs-on: ubuntu-latest
+    name: publish release
+    needs: [build]
+    steps:
+      - uses: actions/checkout@master
+      - name: Set env
+        run: |
+          echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
+          echo ::set-env name=ARTIFACT::${ARTIFACT}-bin.tar.gz
+      - name: Download artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: ${{ env.ARTIFACT }}
+          path: downloads/
+      - name: Publish release
+        uses: ./.github/actions/publish
+        with:
+          args: downloads/
+          draft_regex: '[0-9]+.[0-9]+.[0-9]+-[a-zA-Z]+'
+          prerelease_regex: '[a-zA-Z]+-[0-9]+.[0-9]+.[0-9]+'
+#          notes: '${{ steps.notes.outputs.data }}'
+        env:
+          RELEASE_PREFIX: ${{ env.RELEASE_PREFIX }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
