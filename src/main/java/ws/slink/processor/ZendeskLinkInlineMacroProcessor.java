@@ -55,22 +55,4 @@ public class ZendeskLinkInlineMacroProcessor extends InlineMacroProcessor {
             return createPhraseNode(parent, "anchor", target, attributes, options);
         }
     }
-
 }
-
-
-
-
-//            options.put("target", "/display/" + space + "/" + page);
-//            String[] parts = target.split(":", 2);
-//            String space, page;
-//            if (parts.length > 1) {
-//                space = parts[0];
-//                page = parts[1];
-//            } else {
-//                space = confluenceSpaceKey;
-//                page = parts[0];
-//            }
-//            Map<String, Object> options = new HashMap<>();
-//            options.put("type", ":link");
-//            options.put("target", "/display/" + space + "/" + page);

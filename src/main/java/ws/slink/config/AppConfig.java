@@ -29,7 +29,8 @@ public class AppConfig {
     private String  url;
     private String  user;
     private String  token;
-    private String  input;
+    private String  file;
+    private String  test;
     private String  profile; // configuration file suffix (.properties.profile)
     private Integer group;
     private boolean clean;
@@ -37,6 +38,8 @@ public class AppConfig {
 
     public void print() {
         System.out.println("input directory: " + dir);
+        System.out.println("input file     : " + file);
+        System.out.println("input test     : " + test);
         System.out.println("zendesk url    : " + url);
         System.out.println("zendesk user   : " + user);
         System.out.println("zendesk token  : " + token);

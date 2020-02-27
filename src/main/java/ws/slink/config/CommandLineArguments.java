@@ -11,8 +11,11 @@ public class CommandLineArguments {
 
     @Autowired
     public CommandLineArguments(ApplicationArguments args, AppConfig appConfig) {
-        if (args.containsOption("input")) {
-            appConfig.input(args.getOptionValues("input").get(0));
+        if (args.containsOption("file")) {
+            appConfig.file(args.getOptionValues("file").get(0));
+        }
+        if (args.containsOption("test")) {
+            appConfig.test(args.getOptionValues("test").get(0));
         }
         if (args.containsOption("dir")) {
             appConfig.dir(args.getOptionValues("dir").get(0));

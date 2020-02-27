@@ -24,6 +24,7 @@ public class Processor {
 
     private final @NonNull AppConfig appConfig;
     private final @NonNull DirectoryProcessor directoryProcessor;
+    private final @NonNull FileProcessor fileProcessor;
     private final @NonNull ZendeskTools zendeskTools;
     private final @NonNull ZendeskFacade zendeskFacade;
 
@@ -41,6 +42,8 @@ public class Processor {
                 }
             });
             zendeskFacade.getCategories().stream().forEach(c -> zendeskFacade.removeCategory(c));
+        } else if (StringUtils.isNotBlank(appConfig.file())) {
+            result.merge(fileProcessor.process(appConfig.file(), new ZendeskHierarchy()));
         } else {
             if (StringUtils.isNotBlank(appConfig.dir()))
                 result.merge(directoryProcessor.process(appConfig.dir(), new ZendeskHierarchy()));
@@ -49,7 +52,7 @@ public class Processor {
         return new StringBuilder()
             .append("-------------------------------------------------------------").append("\n")
             .append("total time taken       : " + DurationFormatUtils.formatDuration( timeB - timeA, "HH:mm:ss")).append("\n")
-            .append("successfully published : " + result.get(RT_PUB_SUCCESS).get()).append("\n")
+            .append("published articles     : " + result.get(RT_PUB_SUCCESS).get()).append("\n")
             .append("published drafts       : " + result.get(RT_PUB_DRAFT).get()).append("\n")
             .append("publishing errors      : " + result.get(RT_PUB_FAILURE).get()).append("\n")
             .append("successfully removed   : " + result.get(RT_DEL_SUCCESS).get()).append("\n")

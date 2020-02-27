@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.zendesk.client.v2.model.hc.Article;
 import ws.slink.config.AppConfig;
 import ws.slink.model.ProcessingResult;
+import ws.slink.tools.FileTools;
 import ws.slink.zendesk.ZendeskFacade;
 import ws.slink.zendesk.ZendeskHierarchy;
 import ws.slink.zendesk.ZendeskTools;
@@ -34,12 +35,13 @@ public class DirectoryProcessor {
     private final @NonNull AppConfig appConfig;
     private final @NonNull ZendeskTools zendeskTools;
     private final @NonNull ZendeskFacade zendeskFacade;
+    private final @NonNull FileTools fileTools;
 
     public ProcessingResult process(String directoryPath, ZendeskHierarchy hierarchy) {
         log.info("> start directory processing: '{}'", directoryPath);
         ProcessingResult result = new ProcessingResult();
 
-        if (!zendeskTools.updateHierarchy(hierarchy, readProperties(directoryPath))) {
+        if (!zendeskTools.updateHierarchy(hierarchy, fileTools.readProperties(directoryPath))) {
             log.warn("could not load zendesk hierarchy data");
             result.add(RT_DIR_SKIPPED);
         } else {
@@ -128,19 +130,6 @@ public class DirectoryProcessor {
                 e.printStackTrace();
             return new ProcessingResult(RT_PUB_FAILURE);
         }
-    }
-
-    private Properties readProperties(String directoryPath) {
-        String filename = directoryPath + File.separator + appConfig.getConfigFileName();
-        Properties properties = new Properties();
-        try (InputStream input = new FileInputStream(filename)) {
-            properties.load(input);
-        } catch (IOException ex) {
-            log.error("Error reading properties from '{}': {}", filename, ex.getMessage());
-            if (log.isTraceEnabled())
-                ex.printStackTrace();
-        }
-        return properties;
     }
 
 }

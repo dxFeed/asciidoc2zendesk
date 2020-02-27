@@ -1,5 +1,6 @@
 package ws.slink.parser;
 
+import ch.qos.logback.core.encoder.EchoEncoder;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import ws.slink.config.AppConfig;
 import ws.slink.model.Document;
 import ws.slink.model.ProcessingResult;
 import ws.slink.processor.*;
+import ws.slink.tools.FileTools;
 import ws.slink.zendesk.ZendeskFacade;
 import ws.slink.zendesk.ZendeskHierarchy;
 import ws.slink.zendesk.ZendeskTools;
@@ -62,8 +64,7 @@ public class FileProcessor {
     private final @NonNull AppConfig appConfig;
     private final @NonNull ZendeskTools zendeskTools;
     private final @NonNull ZendeskFacade zendeskFacade;
-
-    private Asciidoctor asciidoctor;
+    private final @NonNull FileTools fileTools;
 
     @SuppressWarnings("unchecked")
     private void disableAccessWarnings() {
@@ -87,18 +88,10 @@ public class FileProcessor {
     @PostConstruct
     private void init() {
         disableAccessWarnings();
-        initializeAsciidoctor();
     }
 
-    /**
-     * we need to initialize AsciiDoctor for each document being processed, as we need to know document's space
-     * to create correct inter-document links
-     *
-     * @param document
-     */
-    private void /*Asciidoctor*/ initializeAsciidoctor(/*Document document*/) {
-
-        /*Asciidoctor*/ asciidoctor = Asciidoctor.Factory.create();
+    private Asciidoctor initializeAsciidoctor() {
+        Asciidoctor asciidoctor = Asciidoctor.Factory.create();
 
         // register preprocessors
         asciidoctor.javaExtensionRegistry().preprocessor(VideoMacroPreProcessor.class);
@@ -117,14 +110,33 @@ public class FileProcessor {
         asciidoctor.javaExtensionRegistry().postprocessor(CodeBlockPostProcessor.class);
         asciidoctor.javaExtensionRegistry().postprocessor(ImageBlockPostProcessor.class);
 
-//        return asciidoctor;
+        return asciidoctor;
     }
 
     public ProcessingResult process(String inputFilename, ZendeskHierarchy hierarchy) {
         log.info(">> start file processing: '{}'", inputFilename);
         ProcessingResult result = new ProcessingResult();
-        if (StringUtils.isNotBlank(inputFilename))
+        if (null == hierarchy.category() || null == hierarchy.section()) {
+            File file = new File(inputFilename);
+            String sectionDir = null, categoryDir = null;
+            try {
+                sectionDir  = file.getParent();
+                categoryDir = new File(file.getParent()).getParent();
+            } catch (Exception e) {
+                log.warn("could not get parent directories for input file '{}'", inputFilename);
+            }
+            if (!zendeskTools.updateHierarchy(hierarchy, fileTools.readProperties(categoryDir))) {
+                log.warn("could not load category data");
+                result.add(RT_DIR_SKIPPED);
+            }
+            else if (!zendeskTools.updateHierarchy(hierarchy, fileTools.readProperties(sectionDir))) {
+                log.warn("could not load section data");
+                result.add(RT_DIR_SKIPPED);
+            }
+        }
+        if (StringUtils.isNotBlank(inputFilename) && result.get(RT_DIR_SKIPPED).get() == 0) {
             read(inputFilename, hierarchy).ifPresent(d -> convert(d).ifPresent(cd -> result.merge(publishOrPrint(d, cd, hierarchy))));
+        }
         return result;
     }
 
@@ -175,7 +187,7 @@ public class FileProcessor {
     }
 
     public Optional<String> convert(Document document) {
-//        Asciidoctor asciidoctor = initializeAsciidoctor(/*document*/);
+        Asciidoctor asciidoctor = initializeAsciidoctor(/*document*/);
         try {
             String result = asciidoctor
             .convertFile(
@@ -234,7 +246,7 @@ public class FileProcessor {
                 }
             }
             if (document.draft())
-                return new ProcessingResult(RT_PUB_SUCCESS).add(RT_PUB_DRAFT);
+                return new ProcessingResult(/*RT_PUB_SUCCESS*/).add(RT_PUB_DRAFT);
             else
                 return new ProcessingResult(RT_PUB_SUCCESS);
         } else { // just print document to stdout

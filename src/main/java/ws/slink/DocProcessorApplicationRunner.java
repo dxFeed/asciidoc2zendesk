@@ -40,9 +40,9 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
     public void run(String... args) {
         int exitCode = 0;
 
-        if (StringUtils.isNotBlank(appConfig.input())) {
+        if (StringUtils.isNotBlank(appConfig.test())) {
             fileProcessor
-                .read(appConfig.input(), new ZendeskHierarchy().category(new Category()).section(new Section()))
+                .read(appConfig.test(), new ZendeskHierarchy().category(new Category()).section(new Section()))
                 .map(fileProcessor::convert)
                 .ifPresent(System.out::println)
             ;
@@ -63,7 +63,7 @@ public class DocProcessorApplicationRunner implements CommandLineRunner, Applica
         return !( StringUtils.isNotBlank(appConfig.url()) && (StringUtils.isBlank(appConfig.user()) || StringUtils.isBlank(appConfig.token()))
         || StringUtils.isNotBlank(appConfig.user()) && (StringUtils.isBlank(appConfig.url()) || StringUtils.isBlank(appConfig.token()))
         || StringUtils.isNotBlank(appConfig.token()) && (StringUtils.isBlank(appConfig.user()) || StringUtils.isBlank(appConfig.url()))
-        || (StringUtils.isBlank(appConfig.dir()) && !appConfig.deleteAll())
+        || (StringUtils.isBlank(appConfig.dir()) && StringUtils.isBlank(appConfig.file()) && !appConfig.deleteAll())
         )
         ;
     }
