@@ -18,6 +18,7 @@ public class TableBlockPostProcessor extends Postprocessor {
         doc.select("table").stream().forEach(element -> {
             String classAttribute = element.attributes().get("class");
             element.attributes().put("class", classAttribute + " table");
+//            element.attributes().put("border", "1");
         });
         return doc.body().toString();
     }

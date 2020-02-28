@@ -51,6 +51,10 @@ public class ZendeskFacade {
         }
     }
 
+    public boolean initialized() {
+        return zendesk != null;
+    }
+
     public List<Category> getCategories() {
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
