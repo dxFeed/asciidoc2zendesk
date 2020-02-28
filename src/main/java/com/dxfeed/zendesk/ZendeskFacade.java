@@ -1,4 +1,4 @@
-package ws.slink.zendesk;
+package com.dxfeed.zendesk;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,7 @@ import org.zendesk.client.v2.Zendesk;
 import org.zendesk.client.v2.ZendeskResponseException;
 import org.zendesk.client.v2.ZendeskResponseRateLimitException;
 import org.zendesk.client.v2.model.hc.*;
-import ws.slink.config.AppConfig;
+import com.dxfeed.config.AppConfig;
 
 import javax.annotation.PostConstruct;
 import java.util.Collections;
