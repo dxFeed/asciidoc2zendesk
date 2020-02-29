@@ -19,3 +19,4 @@ buildNumber.properties
 doc-check/
 *.log
 zendesk.txt
+doc-test*

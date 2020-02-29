@@ -11,13 +11,6 @@ env:
 
 jobs:
 
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: check java
-        run: |
-          java -version
-
   build:
     runs-on: ubuntu-latest
     steps:
