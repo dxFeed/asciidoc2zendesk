@@ -33,10 +33,6 @@ jobs:
         with:
           jarfile:  ${{ env.JARFILE }}
           artifact: ${{ env.ARTIFACT }}
-#        run: |
-#          ./mvnw clean package
-#          cd target
-#          tar cvfz ${{ env.ARTIFACT }} ${JARFILE}
       - uses: actions/upload-artifact@v1
         with:
           name: ${{ env.ARTIFACT }}
@@ -52,7 +48,6 @@ jobs:
         run: |
           echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
           echo ::set-env name=ARTIFACT::$(echo ${ARTIFACT} | sed "s/%VERSION%/$(echo ${GITHUB_REF:10})/g" )
-#          echo ::set-env name=ARTIFACT::${ARTIFACT}
       - name: Download artifact
         uses: actions/download-artifact@v1
         with:
@@ -64,7 +59,6 @@ jobs:
           args: downloads/
           draft_regex: '[0-9]+.[0-9]+.[0-9]+-[a-zA-Z]+'
           prerelease_regex: '[a-zA-Z]+-[0-9]+.[0-9]+.[0-9]+'
-#          notes: '${{ steps.notes.outputs.data }}'
         env:
           RELEASE_PREFIX: ${{ env.RELEASE_PREFIX }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
