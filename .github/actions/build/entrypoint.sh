@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -euo pipefail
-
 echo "-----------------------------------------------------"
 echo "JARFILE : $INPUT_JARFILE"
 echo "ARTIFACT: $INPUT_ARTIFACT"
