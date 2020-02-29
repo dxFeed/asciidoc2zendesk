@@ -1,4 +1,4 @@
-package ws.slink.config;
+package com.dxfeed.config;
 
 import lombok.Data;
 import lombok.experimental.Accessors;

@@ -1,4 +1,4 @@
-package ws.slink;
+package com.dxfeed;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +14,11 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 import org.zendesk.client.v2.model.hc.Category;
 import org.zendesk.client.v2.model.hc.Section;
-import ws.slink.config.AppConfig;
-import ws.slink.parser.FileProcessor;
-import ws.slink.parser.Processor;
-import ws.slink.zendesk.ZendeskFacade;
-import ws.slink.zendesk.ZendeskHierarchy;
+import com.dxfeed.config.AppConfig;
+import com.dxfeed.parser.FileProcessor;
+import com.dxfeed.parser.Processor;
+import com.dxfeed.zendesk.ZendeskFacade;
+import com.dxfeed.zendesk.ZendeskHierarchy;
 
 @Slf4j
 @Component

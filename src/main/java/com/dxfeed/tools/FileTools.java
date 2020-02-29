@@ -1,11 +1,11 @@
-package ws.slink.tools;
+package com.dxfeed.tools;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ws.slink.config.AppConfig;
+import com.dxfeed.config.AppConfig;
 
 import java.io.File;
 import java.io.FileInputStream;

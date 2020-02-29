@@ -1,4 +1,4 @@
-package ws.slink.processor;
+package com.dxfeed.processor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.asciidoctor.ast.Document;
@@ -11,10 +11,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class ZendeskLinkMacroPreProcessor extends Preprocessor {
+public class VideoMacroPreProcessor extends Preprocessor {
 
-    private static final String LINK_START = "(.*)(link:)(.*)(\\[)(.*)(\\])(.*)";
-    private static final Pattern START_PATTERN = Pattern.compile(LINK_START, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    private static final String MACRO_START = "(.*)(video::)([0-9a-zA-Z]+)(\\[)(.*)(\\])(.*)";
+    private static final Pattern START_PATTERN = Pattern.compile(MACRO_START, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
     @Override
     public void process (Document document, PreprocessorReader reader) {
@@ -23,11 +23,8 @@ public class ZendeskLinkMacroPreProcessor extends Preprocessor {
         lines.stream().forEach(line -> {
             Matcher m = START_PATTERN.matcher(line);
             if (m.matches()) {
-                if (m.group(3).startsWith("http://") || m.group(3).startsWith("https://") || m.group(3).startsWith("/")) {
-                    newLines.add(line);
-                } else {
-                    newLines.add(line.replace(m.group(2), "zlink:"));
-                }
+//                System.err.println(">> MATCHED: " + line);
+                newLines.add(line.replace(m.group(2), "zvideo::"));
             } else {
                 newLines.add(line);
             }

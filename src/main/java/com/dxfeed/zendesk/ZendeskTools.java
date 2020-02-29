@@ -1,4 +1,4 @@
-package ws.slink.zendesk;
+package com.dxfeed.zendesk;
 
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import lombok.NonNull;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.zendesk.client.v2.model.hc.Article;
 import org.zendesk.client.v2.model.hc.Category;
 import org.zendesk.client.v2.model.hc.Section;
-import ws.slink.model.Document;
+import com.dxfeed.model.Document;
 
 import java.util.Optional;
 import java.util.Properties;
