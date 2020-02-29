@@ -26,12 +26,17 @@ jobs:
         run: |
           echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
           echo ::set-env name=ARTIFACT::$(echo ${ARTIFACT} | sed "s/%VERSION%/$(echo ${GITHUB_REF:10})/g" )
-#          echo ::set-env name=ARTIFACT::${ARTIFACT}
+          echo ::set-env name=JARFILE::$(echo ${JARFILE})
       - name: Build
-        run: |
-          ./mvnw clean package
-          cd target
-          tar cvfz ${{ env.ARTIFACT }} ${JARFILE}
+        uses: ./.github/actions/build
+        id: build-app
+        with:
+          jarfile:  ${{ env.JARFILE }}
+          artifact: ${{ env.ARTIFACT }}
+#        run: |
+#          ./mvnw clean package
+#          cd target
+#          tar cvfz ${{ env.ARTIFACT }} ${JARFILE}
       - uses: actions/upload-artifact@v1
         with:
           name: ${{ env.ARTIFACT }}

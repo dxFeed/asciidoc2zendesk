@@ -1,0 +1,18 @@
+# action.yml
+name: 'Build Java App'
+description: 'Build Java App'
+branding:
+  icon: ''
+  color: 'yellow'
+inputs:
+  jarfile:
+    description: 'target jarfile name'
+    default: ''
+    required: true
+  artifact:
+    description: 'final artifact name'
+    default: ''
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
