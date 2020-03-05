@@ -1,4 +1,4 @@
-package ws.slink.processor;
+package com.dxfeed.processor;
 
 import org.apache.commons.lang.StringUtils;
 import org.asciidoctor.ast.StructuralNode;
