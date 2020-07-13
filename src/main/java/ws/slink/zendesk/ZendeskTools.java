@@ -1,7 +1,5 @@
 package ws.slink.zendesk;
 
-import com.ctc.wstx.util.StringUtil;
-import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

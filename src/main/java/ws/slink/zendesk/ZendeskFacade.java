@@ -189,12 +189,15 @@ public class ZendeskFacade {
      * @return Optional<Category> or empty if error occurred
      */
     public Optional<Category> getCategory(String oldName, String name, String description, long position, boolean update) {
-        Optional<Category> categoryOpt;
-        if (StringUtils.isBlank(oldName)) {
-            categoryOpt = getCategoryByName(name);
-        } else {
+
+        // try to get exiting category with (new?) title
+        Optional<Category> categoryOpt = getCategoryByName(name);
+
+        // try to get exiting category with (old) title (to be renamed)
+        if (!categoryOpt.isPresent() && StringUtils.isNotBlank(oldName))
             categoryOpt = getCategoryByName(oldName);
-        }
+
+        // update existing category
         if (categoryOpt.isPresent()) {
             if (update) {
                 log.trace("updating category '{}': {} #{}", categoryOpt.get().getId(), name, position);
@@ -203,11 +206,11 @@ public class ZendeskFacade {
                 log.trace("category found: {} #{}", categoryOpt.get().getId(), position);
                 return categoryOpt;
             }
-        } else if (StringUtils.isBlank(oldName)) {
+        }
+        // create new category
+        else {
             log.trace("adding category '{}' #{}", name, position);
             return addCategory(name, description, position);
-        } else {
-            return Optional.empty();
         }
     }
     public boolean removeCategory(Category category) {
@@ -404,12 +407,15 @@ public class ZendeskFacade {
         }
     }
     public Optional<Section> getSection(Category category, String oldName, String name, String description, long position, boolean update) {
-        Optional<Section> sectionOpt;
-        if (StringUtils.isBlank(oldName)) {
-            sectionOpt = getSection(category, name);
-        } else {
+
+        // try to get exiting section with (new?) title
+        Optional<Section> sectionOpt = getSection(category, name);
+
+        // try to get exiting section with (old) title (to be renamed)
+        if (!sectionOpt.isPresent() && StringUtils.isNotBlank(oldName))
             sectionOpt = getSection(category, oldName);
-        }
+
+        // update existing section
         if (sectionOpt.isPresent()) {
             if (update) {
                 log.trace("updating section '{}': {} #{}", sectionOpt.get().getId(), name, position);
@@ -418,11 +424,11 @@ public class ZendeskFacade {
                 log.trace("section found: {} #{}", sectionOpt.get().getId(), position);
                 return sectionOpt;
             }
-        } else if (StringUtils.isBlank(oldName)) {
+        }
+        // create new section
+        else {
             log.trace("adding section '{}' #{}", name, position);
             return addSection(category, name, description, position);
-        } else {
-            return Optional.empty();
         }
     }
 
