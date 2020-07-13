@@ -1,4 +1,4 @@
-package ws.slink.zendesk;
+package com.dxfeed.zendesk;
 
 import lombok.Data;
 import lombok.experimental.Accessors;

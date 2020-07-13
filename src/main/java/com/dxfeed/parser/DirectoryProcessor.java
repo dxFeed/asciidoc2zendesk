@@ -1,4 +1,4 @@
-package ws.slink.parser;
+package com.dxfeed.parser;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -6,12 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.zendesk.client.v2.model.hc.Article;
-import ws.slink.config.AppConfig;
-import ws.slink.model.ProcessingResult;
-import ws.slink.tools.FileTools;
-import ws.slink.zendesk.ZendeskFacade;
-import ws.slink.zendesk.ZendeskHierarchy;
-import ws.slink.zendesk.ZendeskTools;
+import com.dxfeed.config.AppConfig;
+import com.dxfeed.model.ProcessingResult;
+import com.dxfeed.tools.FileTools;
+import com.dxfeed.zendesk.ZendeskFacade;
+import com.dxfeed.zendesk.ZendeskHierarchy;
+import com.dxfeed.zendesk.ZendeskTools;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static ws.slink.model.ProcessingResult.ResultType.*;
+import static com.dxfeed.model.ProcessingResult.ResultType.*;
 
 @Slf4j
 @Component
