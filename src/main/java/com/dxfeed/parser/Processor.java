@@ -1,4 +1,4 @@
-package ws.slink.parser;
+package com.dxfeed.parser;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -7,15 +7,15 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ws.slink.config.AppConfig;
-import ws.slink.model.ProcessingResult;
-import ws.slink.zendesk.ZendeskFacade;
-import ws.slink.zendesk.ZendeskHierarchy;
-import ws.slink.zendesk.ZendeskTools;
+import com.dxfeed.config.AppConfig;
+import com.dxfeed.model.ProcessingResult;
+import com.dxfeed.zendesk.ZendeskFacade;
+import com.dxfeed.zendesk.ZendeskHierarchy;
+import com.dxfeed.zendesk.ZendeskTools;
 
 import java.time.Instant;
 
-import static ws.slink.model.ProcessingResult.ResultType.*;
+import static com.dxfeed.model.ProcessingResult.ResultType.*;
 
 @Slf4j
 @Component
