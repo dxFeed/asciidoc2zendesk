@@ -3,6 +3,7 @@ package ws.slink.zendesk;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -187,19 +188,26 @@ public class ZendeskFacade {
      * @param update if existing category should be forcefully updated on a server with given parameters
      * @return Optional<Category> or empty if error occurred
      */
-    public Optional<Category> getCategory(String name, String newName, String description, long position, boolean update) {
-        Optional<Category> categoryOpt = getCategoryByName(name);
+    public Optional<Category> getCategory(String oldName, String name, String description, long position, boolean update) {
+        Optional<Category> categoryOpt;
+        if (StringUtils.isBlank(oldName)) {
+            categoryOpt = getCategoryByName(name);
+        } else {
+            categoryOpt = getCategoryByName(oldName);
+        }
         if (categoryOpt.isPresent()) {
             if (update) {
-                log.trace("updating category '{}': {} #{}", categoryOpt.get().getId(), newName, position);
-                return updateCategory(categoryOpt.get(), newName, description, position);
+                log.trace("updating category '{}': {} #{}", categoryOpt.get().getId(), name, position);
+                return updateCategory(categoryOpt.get(), name, description, position);
             } else {
                 log.trace("category found: {} #{}", categoryOpt.get().getId(), position);
                 return categoryOpt;
             }
+        } else if (StringUtils.isBlank(oldName)) {
+            log.trace("adding category '{}' #{}", name, position);
+            return addCategory(name, description, position);
         } else {
-            log.trace("adding category '{}' #{}", newName, position);
-            return addCategory(newName, description, position);
+            return Optional.empty();
         }
     }
     public boolean removeCategory(Category category) {
@@ -339,6 +347,10 @@ public class ZendeskFacade {
             log.info("section '{}' not changed, no update needed", newName);
             return Optional.of(section);
         }
+
+        if (!section.getName().equalsIgnoreCase(newName))
+            log.warn(">>> RENAMING '{}' -> '{}'", section.getName(), newName);
+
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
                 section.setPosition(newPosition);
@@ -391,19 +403,26 @@ public class ZendeskFacade {
             return addSection(categoryName, name, description, position);
         }
     }
-    public Optional<Section> getSection(Category category, String name, String newName, String description, long position, boolean update) {
-        Optional<Section> sectionOpt = getSection(category, name);
+    public Optional<Section> getSection(Category category, String oldName, String name, String description, long position, boolean update) {
+        Optional<Section> sectionOpt;
+        if (StringUtils.isBlank(oldName)) {
+            sectionOpt = getSection(category, name);
+        } else {
+            sectionOpt = getSection(category, oldName);
+        }
         if (sectionOpt.isPresent()) {
             if (update) {
-                log.trace("updating section '{}': {} #{}", sectionOpt.get().getId(), newName, position);
-                return updateSection(sectionOpt.get(), newName, description, position);
+                log.trace("updating section '{}': {} #{}", sectionOpt.get().getId(), name, position);
+                return updateSection(sectionOpt.get(), name, description, position);
             } else {
                 log.trace("section found: {} #{}", sectionOpt.get().getId(), position);
                 return sectionOpt;
             }
+        } else if (StringUtils.isBlank(oldName)) {
+            log.trace("adding section '{}' #{}", name, position);
+            return addSection(category, name, description, position);
         } else {
-            log.trace("adding section '{}' #{}", newName, position);
-            return addSection(category, newName, description, position);
+            return Optional.empty();
         }
     }
 
