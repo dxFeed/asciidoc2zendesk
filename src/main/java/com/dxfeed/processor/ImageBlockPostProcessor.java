@@ -1,4 +1,4 @@
-package ws.slink.processor;
+package com.dxfeed.processor;
 
 import org.asciidoctor.ast.Document;
 import org.asciidoctor.extension.Postprocessor;

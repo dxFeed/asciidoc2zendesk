@@ -43,4 +43,4 @@ logging:
   level:
     root: WARN
     org.zendesk: ${LOGLEVEL:INFO}
-    ws.slink: ${LOGLEVEL:INFO}
+    com.dxfeed: ${LOGLEVEL:INFO}
