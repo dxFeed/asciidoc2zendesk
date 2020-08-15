@@ -23,13 +23,13 @@ public class PermissionGroup implements SearchResultEntity {
     /** The ids of user segments that have publish privileges */
     private List<Long> publish;
     /** When the permission group was created */
-    @JsonProperty("created_at")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss Z")
-    private Date createdAt;
+//    @JsonProperty("created_at")
+//    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss Z")
+//    private Date createdAt;
     /** When the permission group was last updated */
-    @JsonProperty("updated_at")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss Z")
-    private Date updatedAt;
+//    @JsonProperty("updated_at")
+//    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss Z")
+//    private Date updatedAt;
     /** Whether the permission group is built-in. Built-in permission groups cannot be modified */
     @JsonProperty("built_in")
     private Boolean builtIn;
@@ -66,21 +66,21 @@ public class PermissionGroup implements SearchResultEntity {
         this.publish = publish;
     }
 
-    public Date getCreatedAt() {
-        return createdAt;
-    }
+//    public Date getCreatedAt() {
+//        return createdAt;
+//    }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
+//    public void setCreatedAt(Date createdAt) {
+//        this.createdAt = createdAt;
+//    }
 
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
+//    public Date getUpdatedAt() {
+//        return updatedAt;
+//    }
 
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+//    public void setUpdatedAt(Date updatedAt) {
+//        this.updatedAt = updatedAt;
+//    }
 
     public Boolean getBuiltIn() {
         return builtIn;
@@ -97,8 +97,8 @@ public class PermissionGroup implements SearchResultEntity {
                 ", name='" + name + '\'' +
                 ", edit=" + edit +
                 ", publish=" + publish +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
+//                ", createdAt=" + createdAt +
+//                ", updatedAt=" + updatedAt +
                 ", builtIn=" + builtIn +
                 '}';
     }

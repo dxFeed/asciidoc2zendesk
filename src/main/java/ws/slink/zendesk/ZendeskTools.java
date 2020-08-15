@@ -137,6 +137,7 @@ public class ZendeskTools {
             article.setCommentsDisabled(commentsDisabled);
             return Optional.of(article);
         } catch (Exception e) {
+            log.error("error creating article: {}", e.getMessage());
             return Optional.empty();
         }
     }

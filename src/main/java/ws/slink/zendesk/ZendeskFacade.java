@@ -617,6 +617,7 @@ public class ZendeskFacade {
         Optional<PermissionGroup> groupOpt = StreamSupport.stream(zendesk.getPermissionGroups().spliterator(), true)
              .filter(pg -> pg.getName().equalsIgnoreCase(permissionGroupTitle))
              .findFirst();
+        log.trace("received group: {}", groupOpt);
         if (groupOpt.isPresent())
             return groupOpt.get().getId();
         else
