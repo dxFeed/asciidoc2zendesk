@@ -17,7 +17,8 @@ public class TableBlockPostProcessor extends Postprocessor {
         doc.outputSettings(settings);
         doc.select("table").stream().forEach(element -> {
             String classAttribute = element.attributes().get("class");
-            element.attributes().put("class", classAttribute + " table");
+            if (!classAttribute.contains("frame-none") && !classAttribute.contains("grid-none"))
+                element.attributes().put("class", classAttribute + " table");
         });
         return doc.body().toString();
     }
