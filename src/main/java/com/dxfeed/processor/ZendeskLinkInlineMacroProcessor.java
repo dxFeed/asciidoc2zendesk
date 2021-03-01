@@ -1,11 +1,11 @@
-package ws.slink.processor;
+package com.dxfeed.processor;
 
 import org.apache.commons.lang.StringUtils;
 import org.asciidoctor.ast.ContentNode;
 import org.asciidoctor.extension.InlineMacroProcessor;
 import org.asciidoctor.extension.Name;
 import org.zendesk.client.v2.model.hc.Article;
-import ws.slink.zendesk.ZendeskFacade;
+import com.dxfeed.zendesk.ZendeskFacade;
 
 import java.util.HashMap;
 import java.util.Map;

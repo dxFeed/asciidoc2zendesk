@@ -13,6 +13,8 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
     steps:
       - uses: actions/checkout@master
       - name: Set env
@@ -33,6 +35,8 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
     name: publish release
     needs: [build]
     steps:
