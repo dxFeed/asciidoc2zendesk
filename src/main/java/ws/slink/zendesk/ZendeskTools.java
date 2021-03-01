@@ -1,6 +1,5 @@
 package ws.slink.zendesk;
 
-import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,10 +85,7 @@ public class ZendeskTools {
 
         // load category if needed
         if (!StringUtils.isBlank(catName) && (null == hierarchy.category() || !hierarchy.category().getName().equalsIgnoreCase(catName))) {
-            if (StringUtils.isBlank(catOldName)) {
-                catOldName = catName;
-//                log.warn(">>> KEEPING '{}' -> '{}'", catOldName, catName);
-            } else {
+            if (!StringUtils.isBlank(catOldName)) {
                 log.warn(">>> RENAMING '{}' -> '{}'", catOldName, catName);
             }
             Optional<Category> categoryOpt = zendeskFacade.getCategory(catOldName, catName, catDesc, catPos, shouldUpdate);
@@ -97,13 +93,10 @@ public class ZendeskTools {
                 log.trace("~~~~~~~~~ got category: '{}' #{} #{}", categoryOpt.get().getName(), categoryOpt.get().getPosition(), categoryOpt.get().getId());
                 hierarchy.category(categoryOpt.get());
             } else {
-                log.warn("could not load category '{}'", catName);
+                log.warn("could not load category '{}'", (StringUtils.isBlank(catOldName)) ? catName : catOldName);
                 return false;
             }
         }
-
-        if (StringUtils.isBlank(secOldName))
-            secOldName = secName;
 
         // load section if needed
         if (!StringUtils.isBlank(secName) && (null == hierarchy.section() || !hierarchy.section().getName().equalsIgnoreCase(secName))) {
@@ -115,7 +108,7 @@ public class ZendeskTools {
             if (sectionOpt.isPresent()) {
                 hierarchy.section(sectionOpt.get());
             } else {
-                log.warn("could not load section '{}'", secName);
+                log.warn("could not load section '{}'", (StringUtils.isBlank(secOldName)) ? secName : secOldName);
                 return false;
             }
         }
@@ -144,6 +137,7 @@ public class ZendeskTools {
             article.setCommentsDisabled(commentsDisabled);
             return Optional.of(article);
         } catch (Exception e) {
+            log.error("error creating article: {}", e.getMessage());
             return Optional.empty();
         }
     }

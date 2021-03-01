@@ -3,6 +3,7 @@ package ws.slink.zendesk;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -187,19 +188,29 @@ public class ZendeskFacade {
      * @param update if existing category should be forcefully updated on a server with given parameters
      * @return Optional<Category> or empty if error occurred
      */
-    public Optional<Category> getCategory(String name, String newName, String description, long position, boolean update) {
+    public Optional<Category> getCategory(String oldName, String name, String description, long position, boolean update) {
+
+        // try to get exiting category with (new?) title
         Optional<Category> categoryOpt = getCategoryByName(name);
+
+        // try to get exiting category with (old) title (to be renamed)
+        if (!categoryOpt.isPresent() && StringUtils.isNotBlank(oldName))
+            categoryOpt = getCategoryByName(oldName);
+
+        // update existing category
         if (categoryOpt.isPresent()) {
             if (update) {
-                log.trace("updating category '{}': {} #{}", categoryOpt.get().getId(), newName, position);
-                return updateCategory(categoryOpt.get(), newName, description, position);
+                log.trace("updating category '{}': {} #{}", categoryOpt.get().getId(), name, position);
+                return updateCategory(categoryOpt.get(), name, description, position);
             } else {
                 log.trace("category found: {} #{}", categoryOpt.get().getId(), position);
                 return categoryOpt;
             }
-        } else {
-            log.trace("adding category '{}' #{}", newName, position);
-            return addCategory(newName, description, position);
+        }
+        // create new category
+        else {
+            log.trace("adding category '{}' #{}", name, position);
+            return addCategory(name, description, position);
         }
     }
     public boolean removeCategory(Category category) {
@@ -339,6 +350,10 @@ public class ZendeskFacade {
             log.info("section '{}' not changed, no update needed", newName);
             return Optional.of(section);
         }
+
+        if (!section.getName().equalsIgnoreCase(newName))
+            log.warn(">>> RENAMING '{}' -> '{}'", section.getName(), newName);
+
         for (int i = 0; i < maxRequestAttempts; i++) {
             try {
                 section.setPosition(newPosition);
@@ -391,19 +406,29 @@ public class ZendeskFacade {
             return addSection(categoryName, name, description, position);
         }
     }
-    public Optional<Section> getSection(Category category, String name, String newName, String description, long position, boolean update) {
+    public Optional<Section> getSection(Category category, String oldName, String name, String description, long position, boolean update) {
+
+        // try to get exiting section with (new?) title
         Optional<Section> sectionOpt = getSection(category, name);
+
+        // try to get exiting section with (old) title (to be renamed)
+        if (!sectionOpt.isPresent() && StringUtils.isNotBlank(oldName))
+            sectionOpt = getSection(category, oldName);
+
+        // update existing section
         if (sectionOpt.isPresent()) {
             if (update) {
-                log.trace("updating section '{}': {} #{}", sectionOpt.get().getId(), newName, position);
-                return updateSection(sectionOpt.get(), newName, description, position);
+                log.trace("updating section '{}': {} #{}", sectionOpt.get().getId(), name, position);
+                return updateSection(sectionOpt.get(), name, description, position);
             } else {
                 log.trace("section found: {} #{}", sectionOpt.get().getId(), position);
                 return sectionOpt;
             }
-        } else {
-            log.trace("adding section '{}' #{}", newName, position);
-            return addSection(category, newName, description, position);
+        }
+        // create new section
+        else {
+            log.trace("adding section '{}' #{}", name, position);
+            return addSection(category, name, description, position);
         }
     }
 
@@ -592,6 +617,7 @@ public class ZendeskFacade {
         Optional<PermissionGroup> groupOpt = StreamSupport.stream(zendesk.getPermissionGroups().spliterator(), true)
              .filter(pg -> pg.getName().equalsIgnoreCase(permissionGroupTitle))
              .findFirst();
+        log.trace("received group: {}", groupOpt);
         if (groupOpt.isPresent())
             return groupOpt.get().getId();
         else

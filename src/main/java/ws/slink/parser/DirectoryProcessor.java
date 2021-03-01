@@ -42,7 +42,7 @@ public class DirectoryProcessor {
         ProcessingResult result = new ProcessingResult();
 
         if (!zendeskTools.updateHierarchy(hierarchy, fileTools.readProperties(directoryPath))) {
-            log.warn("could not load zendesk hierarchy data");
+            log.warn("could not load zendesk hierarchy data for {}", directoryPath);
             result.add(RT_DIR_SKIPPED);
         } else {
             result.merge(processAllFiles(directoryPath, hierarchy));

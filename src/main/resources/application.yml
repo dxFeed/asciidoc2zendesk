@@ -1,5 +1,5 @@
 zendesk:
-  permission-group-title: "Agents and managers"
+  permission-group-title: "Agents and Managers"
 #  locale                : "en-us"
   comments-disabled     : false
 #  notify-subscribers    : true
